@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+#Non code Files
+*.db
+packages/backend/src/files/*
