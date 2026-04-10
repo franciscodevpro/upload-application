@@ -8,29 +8,33 @@ import Tus from '@uppy/tus'; // Example uploader plugin
 import '@uppy/core/css/style.min.css';
 import '@uppy/dashboard/css/style.min.css';
 
-const uppy = new Uppy({
-  debug: true,
-  autoProceed: false,
-  meta: {
-    parentId: "teste para upload", // Exemplo de metadado para associar ao diretório
-  },
-  restrictions: {
-    maxFileSize: null, // Sem limite para arquivos grandes
+export default function UploadFile({ onUploadSuccess, parentId }: { onUploadSuccess: () => void, parentId?: string | null }) {
+  const meta = {} as Record<string, string>;
+  if (parentId) {
+    meta["parentId"] = parentId; // Adiciona o parentId aos metadados se for fornecido
   }
-})
-.use(Tus, {
-  endpoint: 'http://127.0.0.1:1080/upload/upload', // Endpoint do backend
-  chunkSize: 5 * 1024 * 1024, // 5MB por chunk
-  retryDelays: [0, 1000, 3000, 5000],
-});
-
-export default function UploadFile() {
+  const uppy = new Uppy({
+    debug: true,
+    autoProceed: false,
+    meta,
+    restrictions: {
+      maxFileSize: null, // Sem limite para arquivos grandes
+    }
+  })
+  .use(Tus, {
+    endpoint: 'http://127.0.0.1:1080/upload/upload', // Endpoint do backend
+    chunkSize: 5 * 1024 * 1024, // 5MB por chunk
+    retryDelays: [0, 1000, 3000, 5000],
+    onSuccess: () => {
+      onUploadSuccess();
+    }
+  });
 
   return (
     <section>
-      <h1>Upload de Arquivos e Pastas</h1>
       <Dashboard 
         uppy={uppy} 
+        theme='dark'
         width={'100%'}
         height={450}
       />

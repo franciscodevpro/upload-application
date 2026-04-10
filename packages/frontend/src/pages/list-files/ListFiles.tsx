@@ -10,8 +10,9 @@ import {
   Download, 
   Clock, 
   HardDrive,
-  Music 
+  Music,
 } from 'lucide-react';
+import UploadFile from '../upload-file/UploadFile';
 
 interface FileItem {
   id: string;
@@ -85,7 +86,7 @@ export default function ListFiles() {
 
   return (
     <section className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto mb-20">
         <div className="mb-6">
           <nav className="flex items-center space-x-2 text-sm">
             <a href="/" className="text-blue-400 hover:text-blue-300 transition-colors">
@@ -181,6 +182,8 @@ export default function ListFiles() {
           )}
         </div>
       </div>
+
+      <UploadFile onUploadSuccess={fetchFiles} parentId={undefined} />
     </section>
   );
 };

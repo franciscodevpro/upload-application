@@ -38,6 +38,7 @@ const tusServer = new Server({
       type: (upload.metadata as any).filetype,
       size: upload.size as number,
       path: (upload.storage as any).path,
+      parent: (upload.metadata as any).parentId || null,
     });
     return Promise.resolve(res);
   },
@@ -49,6 +50,7 @@ const saveFiledataIfDoNotExists = async (filedata: {
   type: string;
   size: number;
   path: string;
+  parent: string | null;
 }): Promise<void> => {
   // Informações para o seu relatório/banco de dados
   const fileInfo = {
@@ -60,7 +62,7 @@ const saveFiledataIfDoNotExists = async (filedata: {
     type: filedata.type,
     uploadAt: new Date().toISOString(),
     path: filedata.path,
-    parent: null,
+    parent: filedata.parent,
     status: "active",
   };
 
@@ -94,7 +96,8 @@ app.get("/api/files", async (req, res) => {
 
     res.json(fileList);
   }); */
-  const result = await fileRepository.list();
+  const parent = (req.query.parent as string) || null; // Garantir que seja null se não fornecido
+  const result = await fileRepository.list(parent);
   console.log(result);
   res.json(
     result.map((file) => ({

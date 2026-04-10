@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { eq, Table } from "drizzle-orm";
+import { and, eq, isNull, SQLWrapper, Table } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { files } from "../db/schemas/files";
 import { directories } from "../db/schemas/directories";
@@ -101,8 +101,16 @@ export const fileRepository = {
     });
   },
 
-  async list(): Promise<IFiles[]> {
-    return db.select().from(files).where(eq(files.status, "active"));
+  async list(parent: string | null = null): Promise<IFiles[]> {
+    return db
+      .select()
+      .from(files)
+      .where(
+        and(
+          eq(files.status, "active"),
+          parent ? eq(files.parent, parent) : isNull(files.parent),
+        ),
+      );
   },
 
   async findById(id: string): Promise<IFiles | undefined> {
