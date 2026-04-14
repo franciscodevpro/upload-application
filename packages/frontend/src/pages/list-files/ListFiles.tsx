@@ -11,6 +11,7 @@ import {
   Clock, 
   HardDrive,
   Music,
+  Folder,
 } from 'lucide-react';
 import UploadFile from '../upload-file/UploadFile';
 
@@ -27,6 +28,16 @@ interface FileTypeInfo {
   type: string;
   color: string;
 }
+
+interface DirectoryItem {
+  id: string;
+  name: string;
+  size: number;
+  parent: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 const fileTypeMap: Record<string, FileTypeInfo> = {
   pdf: { icon: FileText, type: 'PDF', color: 'text-red-500' },
@@ -67,10 +78,26 @@ const getFileType = (fileName: string): string => {
   return getFileInfo(fileName).type;
 };
 
+const getDirectoryIcon = () => {
+  return <Folder size={24} className={`mr-3 'text-gray-400'`} />;
+};
+
+const getDirectoryType = (): string => {
+  return 'Pasta';
+};
+
 export default function ListFiles() {
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [directories, setDirectories] = useState<DirectoryItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const API_URL = 'http://127.0.0.1:1080/api';
+
+  const fetchDirectories = async (parent?: string): Promise<void> => {
+    const url = parent ? `${API_URL}/directories?parent=${parent}` : `${API_URL}/directories`;
+    const res = await fetch(url);
+    const data = await res.json();
+    setDirectories(data);
+  };
 
   const fetchFiles = async (): Promise<void> => {
     const res = await fetch(`${API_URL}/files`);
@@ -79,7 +106,10 @@ export default function ListFiles() {
   };
 
   useEffect(() => {
-    setTimeout(() => fetchFiles(), 100) 
+    setTimeout(() => {
+      fetchDirectories();
+      fetchFiles();
+    }, 100);
   }, []);
 
   const formatSize = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2) + ' MB';
@@ -120,13 +150,52 @@ export default function ListFiles() {
         <div className="bg-gray-800 rounded-lg shadow-2 overflow-hidden">
           <header className="text-gray-300 text-sm p-1 border-b border-gray-700 fade-edges py-2 px-5">
             <div className="flex items-center">
-              <div className="flex-1 px-1 box-border overflow-hidden font-bold">Arquivo</div>
+              <div className="flex-1 px-1 box-border overflow-hidden font-bold">Nome</div>
               <div className="w-20 px-1 box-border overflow-hidden font-bold text-center">Tipo</div>
               <div className="w-24 px-1 box-border overflow-hidden font-bold">Tamanho</div>
-              <div className="w-52 px-1 box-border overflow-hidden font-bold">Data de upload</div>
+              <div className="w-52 px-1 box-border overflow-hidden font-bold">Data de criação</div>
               <div className="w-16 text-center px-1 box-border overflow-hidden font-bold">Ações</div>
             </div>
           </header>
+          <section className="divide-y divide-gray-700 relative fade-edges px-5">
+            {directories.map((directory) => (
+              <article key={directory.name} className="p-1 hover:bg-gray-750 transition-all duration-200 group flex items-center rounded-lg py-2">
+                <div className="flex-1 flex items-center px-1 box-border overflow-hidden">
+                  <input 
+                    id={`checkbox-${directory.name}`}
+                    type="checkbox" 
+                    checked={selected.includes(directory.name)}
+                    onChange={() => setSelected(prev => prev.includes(directory.name) ? prev.filter(f => f !== directory.name) : [...prev, directory.name])}
+                    className={`rounded-md border-gray-600 text-blue-600 bg-gray-800 focus:ring-blue-500 focus:ring-2 cursor-pointer transition-all ${
+                      selected.length > 0 ? 'w-4 h-4 mr-3' : 'w-0 h-0 hidden'
+                    }`}
+                  />
+                  {getDirectoryIcon()}
+                  <label 
+                    htmlFor={`checkbox-${directory.name}`}
+                    className="text-white font-medium truncate max-w-xs cursor-pointer"
+                  >
+                    {directory.name}
+                  </label>
+                </div>
+                <div className="w-20 px-1 box-border overflow-hidden text-center">
+                  <span className="inline-flex py-0.5 px-3 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                    {getDirectoryType()}
+                  </span>
+                </div>
+                <div className="w-24 text-gray-300 text-sm flex items-center px-1 box-border overflow-hidden">
+                  <HardDrive size={14} className="mr-2 opacity-60" />
+                  {formatSize(directory.size)}
+                </div>
+                <div className="w-52 text-gray-300 text-sm flex items-center px-1 box-border overflow-hidden">
+                  <Clock size={14} className="mr-2 opacity-60" />
+                  {new Date(directory.createdAt).toLocaleString('pt-BR')}
+                </div>
+                <div className="w-16 text-center px-1 box-border overflow-hidden">
+                </div>
+              </article>
+            ))}
+          </section>
           <section className="divide-y divide-gray-700 relative fade-edges px-5">
             {files.map((file) => (
               <article key={file.name} className="p-1 hover:bg-gray-750 transition-all duration-200 group flex items-center rounded-lg py-2">
