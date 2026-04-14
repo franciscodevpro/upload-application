@@ -211,8 +211,8 @@ app.post("/api/directories", async (req, res) => {
   try {
     const { name, parent, path: dirPath } = req.body;
 
-    if (!name || !dirPath) {
-      return res.status(400).json({ error: "Name and path are required" });
+    if (!name) {
+      return res.status(400).json({ error: "Name is required" });
     }
 
     const id = randomUUID();
@@ -223,7 +223,7 @@ app.post("/api/directories", async (req, res) => {
       name,
       size: 0,
       parent: parent || null,
-      path: dirPath,
+      path: dirPath || null,
       createdAt: now,
       updatedAt: now,
       status: "active",
@@ -234,7 +234,7 @@ app.post("/api/directories", async (req, res) => {
       name,
       size: 0,
       parent: parent || null,
-      path: dirPath,
+      path: dirPath || null,
       createdAt: now,
       updatedAt: now,
       status: "active",

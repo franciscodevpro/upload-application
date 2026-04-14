@@ -32,7 +32,7 @@ db.run(`
     name TEXT NOT NULL,
     size INTEGER DEFAULT 0,
     parent TEXT,
-    path TEXT NOT NULL,
+    path TEXT,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL,
     status TEXT DEFAULT 'active'
@@ -154,11 +154,16 @@ export const directoryRepository = {
     });
   },
 
-  async list(): Promise<IDirectoryNullable[]> {
+  async list(parent: string | null = null): Promise<IDirectoryNullable[]> {
     return db
       .select()
       .from(directories)
-      .where(eq(directories.status, "active"));
+      .where(
+        and(
+          eq(directories.status, "active"),
+          parent ? eq(directories.parent, parent) : isNull(directories.parent),
+        ),
+      );
   },
 
   async findById(id: string): Promise<IDirectoryNullable | undefined> {

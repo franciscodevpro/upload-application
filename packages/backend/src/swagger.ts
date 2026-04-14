@@ -231,6 +231,16 @@ const swaggerDefinition = {
       get: {
         summary: "Lista todos os diretorios",
         tags: ["Directories"],
+        parameters: [
+          {
+            name: "parent",
+            in: "query",
+            required: false,
+            description:
+              "Filtra por parent. Quando nao informado, retorna somente diretorios raiz (parent nulo).",
+            schema: { type: "string" },
+          },
+        ],
         responses: {
           200: {
             description: "Lista de diretorios",
