@@ -248,7 +248,9 @@ app.post("/api/directories", async (req, res) => {
 // 6. List All Directories
 app.get("/api/directories", async (req, res) => {
   try {
-    const directories = await directoryRepository.list();
+    const parentQuery = req.query.parent;
+    const parent = typeof parentQuery === "string" ? parentQuery : null;
+    const directories = await directoryRepository.list(parent);
     res.json(directories);
   } catch (error) {
     console.error("Error listing directories:", error);
@@ -266,7 +268,32 @@ app.get("/api/directories/:id", async (req, res) => {
       return res.status(404).json({ error: "Directory not found" });
     }
 
-    res.json(directory);
+    const visited = new Set<string>();
+    const address: Array<{ id: string; name: string }> = [];
+    let current: typeof directory | undefined = directory;
+
+    while (current) {
+      const currentId = current.id;
+      if (!currentId || visited.has(currentId)) break;
+
+      visited.add(currentId);
+      address.unshift({
+        id: currentId,
+        name: current.name ?? "",
+      });
+
+      if (!current.parent) break;
+      const parentDirectory = await directoryRepository.findById(
+        current.parent,
+      );
+      if (!parentDirectory) break;
+      current = parentDirectory;
+    }
+
+    res.json({
+      ...directory,
+      address,
+    });
   } catch (error) {
     console.error("Error fetching directory:", error);
     res.status(500).json({ error: "Internal server error" });

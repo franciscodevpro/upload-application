@@ -52,6 +52,29 @@ const swaggerDefinition = {
           status: { type: "string" },
         },
       },
+      DirectoryAddressItem: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          name: { type: "string" },
+        },
+      },
+      DirectoryWithAddress: {
+        allOf: [
+          { $ref: "#/components/schemas/Directory" },
+          {
+            type: "object",
+            properties: {
+              address: {
+                type: "array",
+                items: { $ref: "#/components/schemas/DirectoryAddressItem" },
+                description:
+                  "Lista ordenada da raiz ate o diretorio solicitado, contendo id e name de cada diretorio.",
+              },
+            },
+          },
+        ],
+      },
       UpdateFileRequest: {
         type: "object",
         properties: {
@@ -273,7 +296,7 @@ const swaggerDefinition = {
             description: "Diretorio encontrado",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/Directory" },
+                schema: { $ref: "#/components/schemas/DirectoryWithAddress" },
               },
             },
           },
