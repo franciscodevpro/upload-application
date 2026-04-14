@@ -38,6 +38,10 @@ interface DirectoryItem {
   updatedAt: string;
 }
 
+interface DirectoryItemDetails extends DirectoryItem {
+  address: {id: string; name: string;}[];
+}
+
 
 const fileTypeMap: Record<string, FileTypeInfo> = {
   pdf: { icon: FileText, type: 'PDF', color: 'text-red-500' },
@@ -87,30 +91,52 @@ const getDirectoryType = (): string => {
 };
 
 export default function ListFiles() {
+  const directoryId = new URLSearchParams(window.location.search).get('directoryId') || undefined;
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [directoryDetails, setDirectoryDetails] = useState<DirectoryItemDetails | undefined>(undefined);
   const [directories, setDirectories] = useState<DirectoryItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const API_URL = 'http://127.0.0.1:1080/api';
 
+  const fetchDirectoryDetails = async (directoryId: string): Promise<void> => {
+    const res = await fetch(`${API_URL}/directories/${directoryId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setDirectoryDetails(data);
+    }
+  };
+
   const fetchDirectories = async (parent?: string): Promise<void> => {
     const url = parent ? `${API_URL}/directories?parent=${parent}` : `${API_URL}/directories`;
     const res = await fetch(url);
-    const data = await res.json();
-    setDirectories(data);
+    if (res.ok) {
+      const data = await res.json();
+      setDirectories(data);
+    }
   };
 
-  const fetchFiles = async (): Promise<void> => {
-    const res = await fetch(`${API_URL}/files`);
-    const data = await res.json();
-    setFiles(data);
+  const fetchFiles = async (directoryId?: string): Promise<void> => {
+    const url = directoryId ? `${API_URL}/files?parent=${directoryId}` : `${API_URL}/files`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      setFiles(data);
+    }
+  };
+
+  const fetchData = async (directoryId?: string) => {
+      if (directoryId) {
+        fetchDirectoryDetails(directoryId);
+      }
+      fetchDirectories(directoryId);
+      fetchFiles(directoryId);
   };
 
   useEffect(() => {
     setTimeout(() => {
-      fetchDirectories();
-      fetchFiles();
+      fetchData(directoryId);
     }, 100);
-  }, []);
+  }, [directoryId]);
 
   const formatSize = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 
@@ -122,15 +148,24 @@ export default function ListFiles() {
             <a href="/" className="text-blue-400 hover:text-blue-300 transition-colors">
               Home
             </a>
-            <span className="text-gray-500">/</span>
-            <span className="text-gray-300">Repositório de Arquivos</span>
+            {directoryDetails && directoryDetails.address.map((dir) => (
+              <span key={dir.id} className="flex items-center space-x-2">
+                <span className="text-gray-500">/</span>
+                <a 
+                  href={`/?directoryId=${dir.id}`}
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  {dir.name}
+                </a>
+              </span>
+            ))}
           </nav>
         </div>
 
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 gap-1">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Repositório de Arquivos</h1>
-            <p className="text-gray-400 text-sm">Gerencie arquivos grandes entre Windows e Linux</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Servidor de Arquivos</h1>
+            <p className="text-gray-400 text-sm">Gerencie seus arquivos com facilidade.</p>
           </div>
           
           <button 
@@ -171,12 +206,15 @@ export default function ListFiles() {
                     }`}
                   />
                   {getDirectoryIcon()}
-                  <label 
+                  <a href={`/?directoryId=${directory.id}`} className="text-white font-medium truncate max-w-xs cursor-pointer text-gray-500 hover:text-gray-500">
+                    <span>{directory.name}</span>
+                  </a>
+                  {/* <label 
                     htmlFor={`checkbox-${directory.name}`}
                     className="text-white font-medium truncate max-w-xs cursor-pointer"
                   >
                     {directory.name}
-                  </label>
+                  </label> */}
                 </div>
                 <div className="w-20 px-1 box-border overflow-hidden text-center">
                   <span className="inline-flex py-0.5 px-3 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
@@ -243,16 +281,16 @@ export default function ListFiles() {
             ))}
           </section>
           
-          {files.length === 0 && (
+          { directories.length === 0 && files.length === 0 && (
             <div className="p-16 text-center text-gray-500">
               <File size={48} className="mx-auto mb-4 opacity-50" />
-              Nenhum arquivo encontrado no servidor.
+              Nenhum arquivo encontrado no diretório atual.
             </div>
           )}
         </div>
       </div>
 
-      <UploadFile onUploadSuccess={fetchFiles} parentId={undefined} />
+      <UploadFile onUploadSuccess={() => fetchData(directoryId)} parentId={directoryId} />
     </section>
   );
 };
