@@ -8,7 +8,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => twMerge(clsx(c
 export default function App() {
 
   return (
-    <div className={cn('content')}>
+    <div className={cn('content font-sans')}>
       <Outlet />
     </div>
   );

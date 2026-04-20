@@ -12,8 +12,6 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route element={<App />}>
           <Route path="/" element={<ListFiles />} />
-
-          <Route path="upload" element={<UploadFile />} />
         </Route>
       </Routes>
     </BrowserRouter>

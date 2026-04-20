@@ -1,5 +1,4 @@
 // UploadFile.tsx
-import React from 'react';
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
 import Tus from '@uppy/tus'; // Example uploader plugin
@@ -31,7 +30,7 @@ export default function UploadFile({ onUploadSuccess, parentId }: { onUploadSucc
   });
 
   return (
-    <section>
+    <section className="p-1">
       <Dashboard 
         uppy={uppy} 
         theme='dark'
