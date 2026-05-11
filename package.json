@@ -4,7 +4,10 @@
   "scripts": {
     "dev:backend": "npm --prefix packages/backend run dev",
     "dev:frontend": "npm --prefix packages/frontend run dev",
-    "build:frontend": "npm --prefix packages/frontend run build"
+    "build:frontend": "npm --prefix packages/frontend run build",
+    "build:backend": "npm --prefix packages/backend run build",
+    "build": "npm run build:frontend && npm run build:backend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
   },
   "workspaces": [
     "packages/backend",
@@ -12,6 +15,7 @@
   ],
   "devDependencies": {
     "autoprefixer": "^10.4.27",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1"
   }
