@@ -262,7 +262,7 @@ export default function ListFiles() {
                   <button
                     type="button"
                     onClick={() => setDetailsItem({ item: directory, type: 'directory' })}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border-secondary bg-background-tertiary text-primary-400 transition hover:border-primary-400 hover:text-primary-300"
+                    className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
                     title="Ver detalhes"
                   >
                     <Info size={18} />
@@ -311,14 +311,14 @@ export default function ListFiles() {
                     <button
                       type="button"
                       onClick={() => setDetailsItem({ item: file, type: 'file' })}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border-secondary bg-background-tertiary text-primary-400 transition hover:border-primary-400 hover:text-primary-300"
+                      className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
                       title="Ver detalhes"
                     >
                       <Info size={18} />
                     </button>
                     <a 
                       href={`${API_URL}/download?files=${encodeURIComponent(file.newName)}`}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-background-tertiary text-primary-400 transition hover:bg-background-secondary hover:text-primary-300"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-primary-400 transition hover:bg-background-secondary hover:text-primary-300"
                       title="Baixar individualmente"
                     >
                       <Download size={18} />

@@ -57,7 +57,8 @@ export default function ItemDetailsCard({ open, type, item, onClose }: ItemDetai
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-3xl border border-border-secondary bg-background-secondary/95 p-5 shadow-2xl backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background-primary/60 px-4 py-6 backdrop-blur-sm">
+    <div className="bottom-6 right-6 z-50 w-full max-w-200 rounded-3xl border border-border-secondary bg-background-secondary/95 p-5 shadow-2xl backdrop-blur-md">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-500 text-white shadow-lg">
@@ -85,6 +86,7 @@ export default function ItemDetailsCard({ open, type, item, onClose }: ItemDetai
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 }
