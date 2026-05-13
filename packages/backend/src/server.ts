@@ -24,14 +24,10 @@ const storagePath = path.resolve(__dirname, "files");
 const tusServer = new Server({
   path: "/upload",
   namingFunction: (req, metadata) => {
-    console.log("Naming file");
-    console.log({ metadata });
-    console.log(randomUUID() + path.extname((metadata as any).filename));
     return randomUUID() + path.extname((metadata as any).filename);
   },
   datastore: new FileStore({ directory: storagePath }),
   onUploadFinish(req, res, upload) {
-    console.log({ upload });
     saveFiledataIfDoNotExists({
       id: upload.id,
       name: (upload.metadata as any).filename,
@@ -98,7 +94,6 @@ app.get("/api/files", async (req, res) => {
   }); */
   const parent = (req.query.parent as string) || null; // Garantir que seja null se não fornecido
   const result = await fileRepository.list(parent);
-  console.log(result);
   res.json(
     result.map((file) => ({
       ...file,
@@ -136,16 +131,9 @@ app.get("/api/download", async (req, res) => {
         const filePath = path.join(storagePath, id);
         if (fs.existsSync(filePath)) {
           archive.file(filePath, { name: filedata.originalName });
-          console.log(
-            "Adding: ",
-            filedata.originalName,
-            filedata.size,
-            filePath,
-          );
         }
       }),
     );
-    console.log("Finalize...");
     archive.finalize();
   }
 });
