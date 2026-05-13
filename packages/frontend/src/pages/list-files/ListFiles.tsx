@@ -232,9 +232,9 @@ export default function ListFiles() {
           <header className="text-text-secondary text-sm p-1 border-b border-border-secondary fade-edges py-4 px-6">
             <div className="flex items-center">
               <div className="w-80 px-1 box-border overflow-hidden font-bold font-sans">Nome</div>
-              <div className="w-20 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden font-bold text-center font-sans ">Tipo</div>
-              <div className="w-24 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden font-bold font-sans">Tamanho</div>
-              <div className="w-52 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden font-bold font-sans">Data de criação</div>
+              <div className="w-20 px-1 box-border hidden md:block overflow-hidden font-bold text-center font-sans ">Tipo</div>
+              <div className="w-24 px-1 box-border hidden md:block overflow-hidden font-bold font-sans">Tamanho</div>
+              <div className="w-52 px-1 box-border hidden md:block overflow-hidden font-bold font-sans">Data de criação</div>
               <div className="w-16 text-center px-1 box-border overflow-hidden font-bold font-sans">Ações</div>
             </div>
           </header>
@@ -247,16 +247,16 @@ export default function ListFiles() {
                     <span>{directory.name}</span>
                   </a>
                 </div>
-                <div className="w-20 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden text-center">
+                <div className="w-20 px-1 box-border hidden md:flex overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
                     {getDirectoryType()}
                   </span>
                 </div>
-                <div className="w-24 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
+                <div className="w-24 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
                   <HardDrive size={14} className="mr-2 opacity-60" />
-                  {formatSize(directory.size)}
+                  <span>{formatSize(directory.size)}</span>
                 </div>
-                <div className="w-52 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
+                <div className="w-52 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
                   <Clock size={14} className="mr-2 opacity-60" />
                   {new Date(directory.createdAt).toLocaleString('pt-BR')}
                 </div>
@@ -295,16 +295,16 @@ export default function ListFiles() {
                     {file.name}
                   </label>
                 </div>
-                <div className="w-20 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden text-center">
+                <div className="w-20 px-1 box-border hidden md:flex overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
                     {getFileType(file.name)}
                   </span>
                 </div>
-                <div className="w-24 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
+                <div className="w-24 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
                   <HardDrive size={14} className="mr-2 opacity-60" />
                   {formatSize(file.size)}
                 </div>
-                <div className="w-52 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
+                <div className="w-52 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
                   <Clock size={14} className="mr-2 opacity-60" />
                   {new Date(file.date).toLocaleString('pt-BR')}
                 </div>
