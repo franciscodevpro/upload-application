@@ -177,15 +177,16 @@ export default function ListFiles() {
   const closeDetails = () => setDetailsItem(null);
 
   return (
-    <section className="min-h-screen bg-background-primary text-text-primary p-6 font-sans">
+    <section className="max-w-svw bg-background-primary text-text-primary p-6 font-sans">
       <div className="max-w-7xl mx-auto mb-20">
         <div className="mb-6">
           <nav className="flex items-center space-x-2 text-sm">
             <a href="/" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
               Home
             </a>
-            {directoryDetails && directoryDetails.address.map((dir) => (
-              <span key={dir.id} className="flex items-center space-x-2">
+            {directoryDetails && directoryDetails.address.length > 0 && (directoryDetails.address.length > 1 ? [{id: '...', name: '...'},directoryDetails.address[directoryDetails.address.length-2], directoryDetails.address[directoryDetails.address.length-1]] : directoryDetails.address).map((dir) => (
+              (dir.id === '...')? <span key="ellipsis" className="flex items-center space-x-2"><span className="text-text-muted">/</span> <span className='text-[2rem] leading-6 mb-4'>...</span></span> : (
+              <span key={dir.id} className="flex items-center space-x-2 max-w-[40%] truncate">
                 <span className="text-text-muted">/</span>
                 <a 
                   href={`/?directoryId=${dir.id}`}
@@ -194,12 +195,13 @@ export default function ListFiles() {
                   {dir.name}
                 </a>
               </span>
+              )
             ))}
           </nav>
         </div>
 
-        <div className="flex justify-between items-center mb-8 gap-2">
-          <div>
+        <div className="flex justify-between flex-col md:flex-row items-center mb-8 gap-2">
+          <div className="text-center md:text-left">
             <h1 className="text-4xl font-display font-bold text-text-primary mb-2">Servidor de Arquivos</h1>
             <p className="text-text-secondary text-base">Gerencie seus arquivos com facilidade.</p>
           </div>
@@ -230,9 +232,9 @@ export default function ListFiles() {
           <header className="text-text-secondary text-sm p-1 border-b border-border-secondary fade-edges py-4 px-6">
             <div className="flex items-center">
               <div className="w-80 px-1 box-border overflow-hidden font-bold font-sans">Nome</div>
-              <div className="w-20 px-1 box-border overflow-hidden font-bold text-center font-sans">Tipo</div>
-              <div className="w-24 px-1 box-border overflow-hidden font-bold font-sans">Tamanho</div>
-              <div className="w-52 px-1 box-border overflow-hidden font-bold font-sans">Data de criação</div>
+              <div className="w-20 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden font-bold text-center font-sans ">Tipo</div>
+              <div className="w-24 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden font-bold font-sans">Tamanho</div>
+              <div className="w-52 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden font-bold font-sans">Data de criação</div>
               <div className="w-16 text-center px-1 box-border overflow-hidden font-bold font-sans">Ações</div>
             </div>
           </header>
@@ -245,16 +247,16 @@ export default function ListFiles() {
                     <span>{directory.name}</span>
                   </a>
                 </div>
-                <div className="w-20 px-1 box-border overflow-hidden text-center">
+                <div className="w-20 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
                     {getDirectoryType()}
                   </span>
                 </div>
-                <div className="w-24 text-text-secondary text-sm flex items-center px-1 box-border overflow-hidden">
+                <div className="w-24 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
                   <HardDrive size={14} className="mr-2 opacity-60" />
                   {formatSize(directory.size)}
                 </div>
-                <div className="w-52 text-text-secondary text-sm flex items-center px-1 box-border overflow-hidden">
+                <div className="w-52 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
                   <Clock size={14} className="mr-2 opacity-60" />
                   {new Date(directory.createdAt).toLocaleString('pt-BR')}
                 </div>
@@ -293,16 +295,16 @@ export default function ListFiles() {
                     {file.name}
                   </label>
                 </div>
-                <div className="w-20 px-1 box-border overflow-hidden text-center">
+                <div className="w-20 px-1 box-border hidden md:inline-block text-nowrap overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
                     {getFileType(file.name)}
                   </span>
                 </div>
-                <div className="w-24 text-text-secondary text-sm flex items-center px-1 box-border overflow-hidden">
+                <div className="w-24 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
                   <HardDrive size={14} className="mr-2 opacity-60" />
                   {formatSize(file.size)}
                 </div>
-                <div className="w-52 text-text-secondary text-sm flex items-center px-1 box-border overflow-hidden">
+                <div className="w-52 text-text-secondary text-sm flex items-center px-1 box-border hidden md:inline-block text-nowrap overflow-hidden">
                   <Clock size={14} className="mr-2 opacity-60" />
                   {new Date(file.date).toLocaleString('pt-BR')}
                 </div>
