@@ -101,7 +101,7 @@ export default function ListFiles() {
   const [directories, setDirectories] = useState<DirectoryItem[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [detailsItem, setDetailsItem] = useState<{ item: FileItem | DirectoryItem; type: 'file' | 'directory'; } | null>(null);
-  const API_URL = 'http://127.0.0.1:1080/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:1080/api';
 
   const fetchDirectoryDetails = async (directoryId: string): Promise<void> => {
     const res = await fetch(`${API_URL}/directories/${directoryId}`);
@@ -184,7 +184,7 @@ export default function ListFiles() {
             <a href="/" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
               Home
             </a>
-            {directoryDetails && directoryDetails.address.length > 0 && (directoryDetails.address.length > 1 ? [{id: '...', name: '...'},directoryDetails.address[directoryDetails.address.length-2], directoryDetails.address[directoryDetails.address.length-1]] : directoryDetails.address).map((dir) => (
+            {directoryDetails && directoryDetails.address.length > 0 && (directoryDetails.address.length > 2 ? [{id: '...', name: '...'},directoryDetails.address[directoryDetails.address.length-2], directoryDetails.address[directoryDetails.address.length-1]] : directoryDetails.address).map((dir) => (
               (dir.id === '...')? <span key="ellipsis" className="flex items-center space-x-2"><span className="text-text-muted">/</span> <span className='text-[2rem] leading-6 mb-4'>...</span></span> : (
               <span key={dir.id} className="flex items-center space-x-2 max-w-[40%] truncate">
                 <span className="text-text-muted">/</span>
