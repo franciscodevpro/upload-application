@@ -3,6 +3,7 @@ import { and, eq, isNull, SQLWrapper, Table } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { files } from "../db/schemas/files";
 import { directories } from "../db/schemas/directories";
+import { users } from "../db/schemas/users";
 
 const sqlite = new Database("./files_database.db");
 const db = drizzle({ client: sqlite });
@@ -39,6 +40,18 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    refreshToken TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL,
+    status TEXT DEFAULT 'active'
+  )
+`);
+
 interface IFiles {
   id: string | null;
   originalName: string | null;
@@ -69,6 +82,26 @@ interface IDirectoryNullable {
   size: number | null;
   parent: string | null;
   path: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  status: string | null;
+}
+
+interface IUser {
+  id: string;
+  email: string;
+  password: string;
+  refreshToken: string | null;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+}
+
+interface IUserNullable {
+  id: string | null;
+  email: string | null;
+  password: string | null;
+  refreshToken: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   status: string | null;
@@ -202,5 +235,60 @@ export const directoryRepository = {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(directories.id, id));
+  },
+};
+
+export const userRepository = {
+  async create({
+    id,
+    email,
+    password,
+    createdAt,
+    updatedAt,
+  }: Omit<IUser, "refreshToken" | "status"> & {
+    refreshToken?: string | null;
+  }): Promise<any> {
+    return db.insert(users).values({
+      id,
+      email,
+      password,
+      refreshToken: null,
+      createdAt,
+      updatedAt,
+      status: "active",
+    });
+  },
+
+  async findByEmail(email: string): Promise<IUserNullable | undefined> {
+    const data = await db.select().from(users).where(eq(users.email, email));
+    return data.at(0);
+  },
+
+  async findById(id: string): Promise<IUserNullable | undefined> {
+    const data = await db.select().from(users).where(eq(users.id, id));
+    return data.at(0);
+  },
+
+  async updateRefreshToken(
+    id: string,
+    refreshToken: string | null,
+  ): Promise<any> {
+    return db
+      .update(users)
+      .set({
+        refreshToken,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, id));
+  },
+
+  async delete(id: string): Promise<any> {
+    return db
+      .update(users)
+      .set({
+        status: "deleted",
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, id));
   },
 };

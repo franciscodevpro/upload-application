@@ -7,8 +7,15 @@ import express from "express";
 import cors from "cors";
 import archiver from "archiver";
 import { randomUUID } from "node:crypto";
-import { fileRepository, directoryRepository } from "./repository/sqlite";
+import bcryptjs from "bcryptjs";
+import {
+  fileRepository,
+  directoryRepository,
+  userRepository,
+} from "./repository/sqlite";
 import { setupSwagger } from "./swagger";
+import { authMiddleware } from "./middleware";
+import { generateTokens, verifyRefreshToken } from "./auth";
 
 const app = express();
 app.use(cors());
@@ -342,6 +349,182 @@ app.delete("/api/directories/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting directory:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ============================================
+// AUTH ENDPOINTS
+// ============================================
+
+// 1. Register
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validação
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email e senha são obrigatórios" });
+    }
+
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Senha deve ter pelo menos 6 caracteres" });
+    }
+
+    // Verificar se usuário já existe
+    const existingUser = await userRepository.findByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({ error: "Email já cadastrado" });
+    }
+
+    // Hash da senha
+    const hashedPassword = await bcryptjs.hash(password, 10);
+    const userId = randomUUID();
+    const now = new Date().toISOString();
+
+    // Criar usuário
+    await userRepository.create({
+      id: userId,
+      email,
+      password: hashedPassword,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    res.status(201).json({
+      message: "Usuário registrado com sucesso",
+      userId,
+      email,
+    });
+  } catch (error) {
+    console.error("Erro ao registrar usuário:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// 2. Login
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validação
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email e senha são obrigatórios" });
+    }
+
+    // Buscar usuário
+    const user = await userRepository.findByEmail(email);
+    if (!user || !user.password) {
+      return res.status(401).json({ error: "Credenciais inválidas" });
+    }
+
+    // Verificar senha
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Credenciais inválidas" });
+    }
+
+    // Gerar tokens
+    const { accessToken, refreshToken } = generateTokens({
+      userId: user.id!,
+      email: user.email!,
+    });
+
+    // Salvar refresh token no banco
+    await userRepository.updateRefreshToken(user.id!, refreshToken);
+
+    res.json({
+      message: "Login realizado com sucesso",
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao fazer login:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// 3. Refresh Token
+app.post("/api/auth/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token é obrigatório" });
+    }
+
+    // Verificar refresh token
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded) {
+      return res
+        .status(401)
+        .json({ error: "Refresh token inválido ou expirado" });
+    }
+
+    // Buscar usuário
+    const user = await userRepository.findById(decoded.userId);
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ error: "Refresh token não corresponde" });
+    }
+
+    // Gerar novos tokens
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      generateTokens({
+        userId: user.id!,
+        email: user.email!,
+      });
+
+    // Salvar novo refresh token
+    await userRepository.updateRefreshToken(user.id!, newRefreshToken);
+
+    res.json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar token:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// 4. Logout
+app.post("/api/auth/logout", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+
+    // Limpar refresh token do banco
+    await userRepository.updateRefreshToken(userId, null);
+
+    res.json({ message: "Logout realizado com sucesso" });
+  } catch (error) {
+    console.error("Erro ao fazer logout:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// 5. Get Current User (exemplo de endpoint protegido)
+app.get("/api/auth/me", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    const user = await userRepository.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar usuário:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 
