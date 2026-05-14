@@ -109,8 +109,10 @@ export default function ListFiles() {
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:1080/api';
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchDirectoryDetails = async (directoryId: string): Promise<void> => {
-    const res = await fetch(`${API_URL}/directories/${directoryId}`);
+  const fetchDirectoryDetails = async (directoryId: string, accessToken?: string): Promise<void> => {
+    const res = await fetch(`${API_URL}/directories/${directoryId}`, {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {},
+    });
     if (res.ok) {
       const data = await res.json();
       setDirectoryDetails(data);
@@ -118,9 +120,11 @@ export default function ListFiles() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchDirectories = async (parent?: string): Promise<void> => {
+  const fetchDirectories = async (parent?: string, accessToken?: string): Promise<void> => {
     const url = parent ? `${API_URL}/directories?parent=${parent}` : `${API_URL}/directories`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {},
+    });
     if (res.ok) {
       const data = await res.json();
       setDirectories(data);
@@ -128,9 +132,11 @@ export default function ListFiles() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchFiles = async (directoryId?: string): Promise<void> => {
+  const fetchFiles = async (directoryId?: string, accessToken?: string): Promise<void> => {
     const url = directoryId ? `${API_URL}/files?parent=${directoryId}` : `${API_URL}/files`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {},
+    });
     if (res.ok) {
       const data = await res.json();
       setFiles(data);
@@ -139,12 +145,12 @@ export default function ListFiles() {
 
   const [isPromptOpen, setIsPromptOpen] = useState(false);
 
-  const fetchData = useCallback(async (directoryId?: string) => {
+  const fetchData = useCallback(async (directoryId?: string, accessToken?: string) => {
       if (directoryId) {
-        fetchDirectoryDetails(directoryId);
+        fetchDirectoryDetails(directoryId, accessToken);
       }
-      fetchDirectories(directoryId);
-      fetchFiles(directoryId);
+      fetchDirectories(directoryId, accessToken);
+      fetchFiles(directoryId, accessToken);
   }, [fetchDirectories, fetchDirectoryDetails, fetchFiles]);
 
   const createDirectory = (): void => {
@@ -157,7 +163,7 @@ export default function ListFiles() {
 
     const res = await fetch(`${API_URL}/directories`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(authorizationToken && { 'Authorization': `Bearer ${authorizationToken}` }) },
       body: JSON.stringify({
         name: dirName.trim(),
         path,
@@ -168,7 +174,7 @@ export default function ListFiles() {
     setIsPromptOpen(false);
 
     if (res.ok) {
-      fetchData(directoryId);
+      fetchData(directoryId, authorizationToken || undefined);
     } else {
       const errorData = await res.json().catch(() => null);
       window.alert(errorData?.error || 'Erro ao criar nova pasta.');
@@ -177,9 +183,9 @@ export default function ListFiles() {
 
   useEffect(() => {
     setTimeout(() => {
-      fetchData(directoryId);
+      fetchData(directoryId, authorizationToken || undefined);
     }, 100);
-  }, [directoryId, authorizationToken, fetchData]);
+  }, [directoryId, authorizationToken]);
 
   const formatSize = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   const closeDetails = () => setDetailsItem(null);
@@ -189,7 +195,7 @@ export default function ListFiles() {
       <div className="max-w-7xl mx-auto mb-20">
         <div className="mb-6">
           <nav className="flex flex-col md:flex-row-reverse items-center justify-between text-sm">
-            <UserMenu goToAuth={() => { setIsAuthOpen(true); }} />
+            <UserMenu goToAuth={() => { setIsAuthOpen(true); }} onLogoutSuccess={() => { window.location.href = '/'; }} />
             <div className="flex flex-1 w-full overflow-x-hidden items-center gap-2">
               <a href="/" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
                 Home
@@ -351,10 +357,10 @@ export default function ListFiles() {
         </div>
       </div>
 
-      <UploadFile onUploadSuccess={() => fetchData(directoryId)} parentId={directoryId} />
+      <UploadFile onUploadSuccess={() => fetchData(directoryId, authorizationToken || undefined)} parentId={directoryId} accessToken={authorizationToken || undefined} />
 
       {isAuthOpen && (
-        <AuthPage open={true} onClose={() => setIsAuthOpen(false)} onLoginSuccess={(tokens) => {setAuthorizationToken(tokens.accessToken); setIsAuthOpen(false);}} />
+        <AuthPage open={true} onClose={() => setIsAuthOpen(false)} onLoginSuccess={(tokens) => {setAuthorizationToken(tokens.accessToken); window.location.href = '/';}} />
       )}
 
       {detailsItem && !isAuthOpen && (

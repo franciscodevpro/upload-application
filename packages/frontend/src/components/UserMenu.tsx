@@ -4,9 +4,10 @@ import { useAuthContext } from '../contexts/AuthContext';
 
 interface UserMenuProps {
   goToAuth?: () => void;
+  onLogoutSuccess?: () => void;
 }
 
-export default function UserMenu({ goToAuth }: UserMenuProps) {
+export default function UserMenu({ goToAuth, onLogoutSuccess }: UserMenuProps) {
   const { user, logout, isLoading } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -31,6 +32,7 @@ export default function UserMenu({ goToAuth }: UserMenuProps) {
     try {
       await logout();
       setIsOpen(false);
+      onLogoutSuccess?.();
     } catch (err) {
       console.error('Erro ao fazer logout:', err);
     }

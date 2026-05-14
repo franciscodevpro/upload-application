@@ -46,9 +46,15 @@ export const useAuth = (): AuthContextType => {
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
+        console.log(
+          "Usuário carregado do localStorage:",
+          JSON.parse(storedUser),
+        );
       } catch (err) {
         console.error("Erro ao parsear usuário:", err);
       }
+    } else {
+      console.log("Nenhum usuário encontrado no localStorage");
     }
   }, []);
 
