@@ -35,6 +35,9 @@ const tusServer = new Server({
   },
   datastore: new FileStore({ directory: storagePath }),
   onUploadFinish(req, res, upload) {
+    console.log(
+      `Upload finalizado: ${upload.id} (${upload.size} bytes) usuário: ${(req as any).userId || "desconecido"}`,
+    );
     saveFiledataIfDoNotExists({
       id: upload.id,
       name: (upload.metadata as any).filename,
@@ -42,6 +45,7 @@ const tusServer = new Server({
       size: upload.size as number,
       path: (upload.storage as any).path,
       parent: (upload.metadata as any).parentId || null,
+      userId: (req as any).userId || null,
     });
     return Promise.resolve(res);
   },
@@ -54,6 +58,7 @@ const saveFiledataIfDoNotExists = async (filedata: {
   size: number;
   path: string;
   parent: string | null;
+  userId: string | null;
 }): Promise<void> => {
   // Informações para o seu relatório/banco de dados
   const fileInfo = {
@@ -66,7 +71,7 @@ const saveFiledataIfDoNotExists = async (filedata: {
     uploadAt: new Date().toISOString(),
     path: filedata.path,
     parent: filedata.parent,
-    status: "active",
+    userId: filedata.userId,
   };
 
   try {
@@ -80,27 +85,18 @@ const saveFiledataIfDoNotExists = async (filedata: {
   }
 };
 
-app.all("/upload/*", (req, res) => {
+app.all("/upload/*", authMiddleware, (req, res) => {
+  const userId = (req as any).userId;
+  console.log(`Usuário ${userId} está fazendo upload...`);
   tusServer.handle(req, res);
 });
 
-app.get("/api/files", async (req, res) => {
-  /*fs.readdir(storagePath, (err, files) => {
-    if (err) return res.status(500).json({ error: "Erro ao ler diretório" });
-
-    // Filtra arquivos temporários do TUS (terminados em .info ou sem extensão)
-    const fileList = files
-      .filter((f) => !f.endsWith(".info"))
-      .map((name) => ({
-        name,
-        size: fs.statSync(path.join(storagePath, name)).size,
-        date: fs.statSync(path.join(storagePath, name)).mtime,
-      }));
-
-    res.json(fileList);
-  }); */
+app.get("/api/files", authMiddleware, async (req, res) => {
   const parent = (req.query.parent as string) || null; // Garantir que seja null se não fornecido
-  const result = await fileRepository.list(parent);
+  const result = await fileRepository.list({
+    parent,
+    userId: (req as any).userId || null,
+  });
   res.json(
     result.map((file) => ({
       ...file,
@@ -111,7 +107,7 @@ app.get("/api/files", async (req, res) => {
 });
 
 // 3. Rota para Download (Unitário ou Múltiplo em ZIP)
-app.get("/api/download", async (req, res) => {
+app.get("/api/download", authMiddleware, async (req, res) => {
   const filenames = req.query.files as string | string[];
   const files = Array.isArray(filenames) ? filenames : [filenames];
 
@@ -150,7 +146,7 @@ app.get("/api/download", async (req, res) => {
 // ============================================
 
 // 3. Update File
-app.put("/api/files/:id", async (req, res) => {
+app.put("/api/files/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { parent, originalName } = req.body;
@@ -170,7 +166,7 @@ app.put("/api/files/:id", async (req, res) => {
         : originalName;
     }
 
-    await fileRepository.update(id, updates);
+    await fileRepository.update(id, (req as any).userId || null, updates);
     const updatedFile = await fileRepository.findById(id);
     res.json(updatedFile);
   } catch (error) {
@@ -180,16 +176,19 @@ app.put("/api/files/:id", async (req, res) => {
 });
 
 // 4. Delete File (Mark as deleted)
-app.delete("/api/files/:id", async (req, res) => {
+app.delete("/api/files/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const filedata = await fileRepository.findById(id);
+    const filedata = await fileRepository.findById(
+      id,
+      (req as any).userId || null,
+    );
     if (!filedata) {
       return res.status(404).json({ error: "File not found" });
     }
 
-    await fileRepository.delete(id);
+    await fileRepository.delete(id, (req as any).userId || null);
     res.json({ message: "File deleted successfully", id });
   } catch (error) {
     console.error("Error deleting file:", error);
@@ -202,7 +201,7 @@ app.delete("/api/files/:id", async (req, res) => {
 // ============================================
 
 // 5. Create Directory
-app.post("/api/directories", async (req, res) => {
+app.post("/api/directories", authMiddleware, async (req, res) => {
   try {
     const { name, parent, path: dirPath } = req.body;
 
@@ -221,7 +220,7 @@ app.post("/api/directories", async (req, res) => {
       path: dirPath || null,
       createdAt: now,
       updatedAt: now,
-      status: "active",
+      userId: (req as any).userId || null,
     });
 
     res.status(201).json({
@@ -241,11 +240,14 @@ app.post("/api/directories", async (req, res) => {
 });
 
 // 6. List All Directories
-app.get("/api/directories", async (req, res) => {
+app.get("/api/directories", authMiddleware, async (req, res) => {
   try {
     const parentQuery = req.query.parent;
     const parent = typeof parentQuery === "string" ? parentQuery : null;
-    const directories = await directoryRepository.list(parent);
+    const directories = await directoryRepository.list({
+      parent,
+      userId: (req as any).userId || null,
+    });
     res.json(directories);
   } catch (error) {
     console.error("Error listing directories:", error);
@@ -254,10 +256,13 @@ app.get("/api/directories", async (req, res) => {
 });
 
 // 7. Get Directory by ID
-app.get("/api/directories/:id", async (req, res) => {
+app.get("/api/directories/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const directory = await directoryRepository.findById(id);
+    const directory = await directoryRepository.findById(
+      id,
+      (req as any).userId || null,
+    );
 
     if (!directory) {
       return res.status(404).json({ error: "Directory not found" });
@@ -296,24 +301,34 @@ app.get("/api/directories/:id", async (req, res) => {
 });
 
 // 8. Get Subdirectories by Parent ID
-app.get("/api/directories/:parentId/subdirectories", async (req, res) => {
-  try {
-    const { parentId } = req.params;
-    const subdirectories = await directoryRepository.findByParent(parentId);
-    res.json(subdirectories);
-  } catch (error) {
-    console.error("Error fetching subdirectories:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+app.get(
+  "/api/directories/:parentId/subdirectories",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { parentId } = req.params;
+      const subdirectories = await directoryRepository.findByParent(
+        parentId,
+        (req as any).userId || null,
+      );
+      res.json(subdirectories);
+    } catch (error) {
+      console.error("Error fetching subdirectories:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 // 9. Update Directory
-app.put("/api/directories/:id", async (req, res) => {
+app.put("/api/directories/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, path: dirPath, size } = req.body;
 
-    const directory = await directoryRepository.findById(id);
+    const directory = await directoryRepository.findById(
+      id,
+      (req as any).userId || null,
+    );
     if (!directory) {
       return res.status(404).json({ error: "Directory not found" });
     }
@@ -323,7 +338,7 @@ app.put("/api/directories/:id", async (req, res) => {
     if (dirPath !== undefined) updates.path = dirPath;
     if (size !== undefined) updates.size = size;
 
-    await directoryRepository.update(id, updates);
+    await directoryRepository.update(id, (req as any).userId || null, updates);
 
     const updatedDirectory = await directoryRepository.findById(id);
     res.json(updatedDirectory);
@@ -334,16 +349,19 @@ app.put("/api/directories/:id", async (req, res) => {
 });
 
 // 10. Delete (Invalidate) Directory
-app.delete("/api/directories/:id", async (req, res) => {
+app.delete("/api/directories/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const directory = await directoryRepository.findById(id);
+    const directory = await directoryRepository.findById(
+      id,
+      (req as any).userId || null,
+    );
     if (!directory) {
       return res.status(404).json({ error: "Directory not found" });
     }
 
-    await directoryRepository.delete(id);
+    await directoryRepository.delete(id, (req as any).userId || null);
 
     res.json({ message: "Directory deleted successfully", id });
   } catch (error) {

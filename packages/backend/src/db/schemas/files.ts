@@ -11,4 +11,6 @@ export const files = sqliteTable("files", {
   path: text(),
   parent: text(), // Foreign key to directories table
   status: text().default("active"), // active, deleted, archived
+  userId: text(), // Foreign key to users table
+  privacy: text().default("private"), // private, public
 });
