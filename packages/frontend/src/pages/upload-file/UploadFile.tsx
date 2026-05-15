@@ -7,7 +7,7 @@ import Tus from '@uppy/tus'; // Example uploader plugin
 import '@uppy/core/css/style.min.css';
 import '@uppy/dashboard/css/style.min.css';
 
-export default function UploadFile({ onUploadSuccess, parentId }: { onUploadSuccess: () => void, parentId?: string | null }) {
+export default function UploadFile({ onUploadSuccess, parentId, accessToken }: { onUploadSuccess: () => void, parentId?: string | null, accessToken?: string | null }) {
   const meta = {} as Record<string, string>;
   if (parentId) {
     meta["parentId"] = parentId; // Adiciona o parentId aos metadados se for fornecido
@@ -21,12 +21,15 @@ export default function UploadFile({ onUploadSuccess, parentId }: { onUploadSucc
     }
   })
   .use(Tus, {
-    endpoint: import.meta.env.VITE_TUS_URL || 'http://localhost:1080/upload/upload', // Endpoint do backend
+    endpoint: import.meta.env.VITE_TUS_URL || 'http://localhost:1080/api/upload/file', // Endpoint do backend
     chunkSize: 5 * 1024 * 1024, // 5MB por chunk
     retryDelays: [0, 1000, 3000, 5000],
     onSuccess: () => {
       onUploadSuccess();
-    }
+    },
+    headers: accessToken ? {
+      Authorization: `Bearer ${accessToken}`,
+    } : {},
   });
 
   return (
