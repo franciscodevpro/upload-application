@@ -94,6 +94,7 @@ export const directoriesController = (expressServer: Express) => {
           if (!current.parent) break;
           const parentDirectory = await directoryRepository.findById(
             current.parent,
+            (req as any).userId || null,
           );
           if (!parentDirectory) break;
           current = parentDirectory;
