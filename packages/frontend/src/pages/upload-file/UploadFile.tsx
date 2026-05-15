@@ -21,7 +21,7 @@ export default function UploadFile({ onUploadSuccess, parentId, accessToken }: {
     }
   })
   .use(Tus, {
-    endpoint: import.meta.env.VITE_TUS_URL || 'http://localhost:1080/upload/upload', // Endpoint do backend
+    endpoint: import.meta.env.VITE_TUS_URL || 'http://localhost:1080/api/upload/file', // Endpoint do backend
     chunkSize: 5 * 1024 * 1024, // 5MB por chunk
     retryDelays: [0, 1000, 3000, 5000],
     onSuccess: () => {
