@@ -8,7 +8,7 @@ import { authMiddleware } from "../middleware";
 
 export const uploadFilesController = (expressServer: Express) => {
   // Onde os arquivos serão salvos no seu sistema Linux
-  const storagePath = path.resolve(__dirname, "files");
+  const storagePath = path.resolve(__dirname, "..", "files");
 
   const tusServer = new Server({
     path: "/api/upload",
