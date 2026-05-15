@@ -9,4 +9,6 @@ export const directories = sqliteTable("directories", {
   createdAt: text().notNull(),
   updatedAt: text().notNull(),
   status: text().default("active"), // active, deleted, archived
+  userId: text(), // Foreign key to users table
+  privacy: text().default("private"), // private, public
 });

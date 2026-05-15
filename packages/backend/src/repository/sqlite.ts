@@ -3,6 +3,7 @@ import { and, eq, isNull, SQLWrapper, Table } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { files } from "../db/schemas/files";
 import { directories } from "../db/schemas/directories";
+import { users } from "../db/schemas/users";
 
 const sqlite = new Database("./files_database.db");
 const db = drizzle({ client: sqlite });
@@ -22,7 +23,9 @@ db.run(`
     uploadAt VARCHAR(200),
     path TEXT,
     parent TEXT,
-    status TEXT DEFAULT 'active'
+    status TEXT DEFAULT 'active',
+    userId TEXT REFERENCES users(id),
+    privacy TEXT DEFAULT 'private'
   )
 `);
 
@@ -33,6 +36,20 @@ db.run(`
     size INTEGER DEFAULT 0,
     parent TEXT,
     path TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    userId TEXT REFERENCES users(id),
+    privacy TEXT DEFAULT 'private'
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    refreshToken TEXT,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL,
     status TEXT DEFAULT 'active'
@@ -50,6 +67,8 @@ interface IFiles {
   path: string | null;
   parent: string | null;
   status: string | null;
+  userId: string | null;
+  privacy: string | null;
 }
 
 interface IDirectory {
@@ -61,6 +80,8 @@ interface IDirectory {
   createdAt: string;
   updatedAt: string;
   status: string;
+  userId: string | null;
+  privacy: string;
 }
 
 interface IDirectoryNullable {
@@ -69,6 +90,26 @@ interface IDirectoryNullable {
   size: number | null;
   parent: string | null;
   path: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  status: string | null;
+}
+
+interface IUser {
+  id: string;
+  email: string;
+  password: string;
+  refreshToken: string | null;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+}
+
+interface IUserNullable {
+  id: string | null;
+  email: string | null;
+  password: string | null;
+  refreshToken: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   status: string | null;
@@ -85,8 +126,8 @@ export const fileRepository = {
     uploadAt,
     path,
     parent = null,
-    status = "active",
-  }: IFiles): Promise<any> {
+    userId = null,
+  }: Omit<IFiles, "status" | "privacy">): Promise<any> {
     return db.insert(files).values({
       id,
       originalName,
@@ -97,11 +138,19 @@ export const fileRepository = {
       uploadAt,
       path,
       parent,
-      status,
+      status: "active",
+      userId,
+      privacy: "private",
     });
   },
 
-  async list(parent: string | null = null): Promise<IFiles[]> {
+  async list({
+    parent = null,
+    userId = null,
+  }: {
+    parent?: string | null;
+    userId?: string | null;
+  }): Promise<IFiles[]> {
     return db
       .select()
       .from(files)
@@ -109,25 +158,68 @@ export const fileRepository = {
         and(
           eq(files.status, "active"),
           parent ? eq(files.parent, parent) : isNull(files.parent),
+          userId ? eq(files.userId, userId) : isNull(files.userId),
         ),
       );
   },
 
-  async findById(id: string): Promise<IFiles | undefined> {
-    const data = await db.select().from(files).where(eq(files.id, id));
+  async findById(
+    id: string,
+    userId: string | null = null,
+  ): Promise<IFiles | undefined> {
+    const data = await db
+      .select()
+      .from(files)
+      .where(
+        and(
+          eq(files.id, id),
+          userId ? eq(files.userId, userId) : isNull(files.userId),
+        ),
+      );
     return data.at(0);
   },
 
-  async findByParent(parentId: string): Promise<IFiles[]> {
-    return db.select().from(files).where(eq(files.parent, parentId));
+  async findByParent(
+    parentId: string,
+    userId: string | null = null,
+  ): Promise<IFiles[]> {
+    return db
+      .select()
+      .from(files)
+      .where(
+        and(
+          eq(files.parent, parentId),
+          userId ? eq(files.userId, userId) : isNull(files.userId),
+        ),
+      );
   },
 
-  async update(id: string, updates: Partial<Omit<IFiles, "id">>): Promise<any> {
-    return db.update(files).set(updates).where(eq(files.id, id));
+  async update(
+    id: string,
+    userId: string | null = null,
+    updates: Partial<Omit<IFiles, "id">>,
+  ): Promise<any> {
+    return db
+      .update(files)
+      .set(updates)
+      .where(
+        and(
+          eq(files.id, id),
+          userId ? eq(files.userId, userId) : isNull(files.userId),
+        ),
+      );
   },
 
-  async delete(id: string): Promise<any> {
-    return db.update(files).set({ status: "deleted" }).where(eq(files.id, id));
+  async delete(id: string, userId: string | null = null): Promise<any> {
+    return db
+      .update(files)
+      .set({ status: "deleted" })
+      .where(
+        and(
+          eq(files.id, id),
+          userId ? eq(files.userId, userId) : isNull(files.userId),
+        ),
+      );
   },
 };
 
@@ -140,8 +232,8 @@ export const directoryRepository = {
     path,
     createdAt,
     updatedAt,
-    status,
-  }: IDirectory): Promise<any> {
+    userId = null,
+  }: Omit<IDirectory, "status" | "privacy">): Promise<any> {
     return db.insert(directories).values({
       id,
       name,
@@ -150,11 +242,19 @@ export const directoryRepository = {
       path,
       createdAt,
       updatedAt,
-      status,
+      status: "active",
+      userId,
+      privacy: "private",
     });
   },
 
-  async list(parent: string | null = null): Promise<IDirectoryNullable[]> {
+  async list({
+    parent = null,
+    userId = null,
+  }: {
+    parent?: string | null;
+    userId?: string | null;
+  }): Promise<IDirectoryNullable[]> {
     return db
       .select()
       .from(directories)
@@ -162,27 +262,45 @@ export const directoryRepository = {
         and(
           eq(directories.status, "active"),
           parent ? eq(directories.parent, parent) : isNull(directories.parent),
+          userId ? eq(directories.userId, userId) : isNull(directories.userId),
         ),
       );
   },
 
-  async findById(id: string): Promise<IDirectoryNullable | undefined> {
+  async findById(
+    id: string,
+    userId: string | null = null,
+  ): Promise<IDirectoryNullable | undefined> {
     const data = await db
       .select()
       .from(directories)
-      .where(eq(directories.id, id));
+      .where(
+        and(
+          eq(directories.id, id),
+          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+        ),
+      );
     return data.at(0);
   },
 
-  async findByParent(parentId: string): Promise<IDirectoryNullable[]> {
+  async findByParent(
+    parentId: string,
+    userId: string | null = null,
+  ): Promise<IDirectoryNullable[]> {
     return db
       .select()
       .from(directories)
-      .where(eq(directories.parent, parentId));
+      .where(
+        and(
+          eq(directories.parent, parentId),
+          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+        ),
+      );
   },
 
   async update(
     id: string,
+    userId: string | null = null,
     updates: Partial<Omit<IDirectory, "id">>,
   ): Promise<any> {
     return db
@@ -191,16 +309,81 @@ export const directoryRepository = {
         ...updates,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(directories.id, id));
+      .where(
+        and(
+          eq(directories.id, id),
+          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+        ),
+      );
   },
 
-  async delete(id: string): Promise<any> {
+  async delete(id: string, userId: string | null = null): Promise<any> {
     return db
       .update(directories)
       .set({
         status: "deleted",
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(directories.id, id));
+      .where(
+        and(
+          eq(directories.id, id),
+          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+        ),
+      );
+  },
+};
+
+export const userRepository = {
+  async create({
+    id,
+    email,
+    password,
+    createdAt,
+    updatedAt,
+  }: Omit<IUser, "refreshToken" | "status"> & {
+    refreshToken?: string | null;
+  }): Promise<any> {
+    return db.insert(users).values({
+      id,
+      email,
+      password,
+      refreshToken: null,
+      createdAt,
+      updatedAt,
+      status: "active",
+    });
+  },
+
+  async findByEmail(email: string): Promise<IUserNullable | undefined> {
+    const data = await db.select().from(users).where(eq(users.email, email));
+    return data.at(0);
+  },
+
+  async findById(id: string): Promise<IUserNullable | undefined> {
+    const data = await db.select().from(users).where(eq(users.id, id));
+    return data.at(0);
+  },
+
+  async updateRefreshToken(
+    id: string,
+    refreshToken: string | null,
+  ): Promise<any> {
+    return db
+      .update(users)
+      .set({
+        refreshToken,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, id));
+  },
+
+  async delete(id: string): Promise<any> {
+    return db
+      .update(users)
+      .set({
+        status: "deleted",
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, id));
   },
 };
