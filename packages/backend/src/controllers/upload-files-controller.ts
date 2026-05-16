@@ -1,5 +1,6 @@
 import { Express } from "express";
 import path from "path";
+import fs from "node:fs";
 import { Server } from "@tus/server";
 import { FileStore } from "@tus/file-store";
 import { randomUUID } from "node:crypto";
@@ -29,6 +30,12 @@ export const uploadFilesController = (expressServer: Express) => {
         parent: (upload.metadata as any).parentId || null,
         userId: (req as any).userId || null,
       });
+      const jsonMetadataFile = path.resolve(
+        (upload.storage as any).path + ".json",
+      );
+      if (fs.existsSync(jsonMetadataFile)) {
+        fs.unlinkSync(jsonMetadataFile);
+      }
       return Promise.resolve(res);
     },
   });

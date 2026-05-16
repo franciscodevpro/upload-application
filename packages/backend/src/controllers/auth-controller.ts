@@ -1,9 +1,15 @@
 import { Express } from "express";
 import bcryptjs from "bcryptjs";
 import { randomUUID } from "node:crypto";
-import { userRepository } from "../repository/sqlite";
+import {
+  directoryRepository,
+  fileRepository,
+  userRepository,
+} from "../repository/sqlite";
 import { generateTokens, verifyRefreshToken } from "../auth";
 import { authMiddleware } from "../middleware";
+import path from "node:path";
+import fs from "node:fs";
 
 export const authController = (expressServer: Express) => {
   // 1. Register
@@ -181,4 +187,44 @@ export const authController = (expressServer: Express) => {
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
+
+  const deleteFileFromPath = async (filePath: string) => {
+    const fullPath = path.resolve(filePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+  };
+
+  expressServer.delete(
+    "/api/auth/delete-account",
+    authMiddleware,
+    async (req, res) => {
+      try {
+        const userId = (req as any).userId;
+
+        if (!userId) {
+          return res.status(401).json({ error: "Usuário não autenticado" });
+        }
+
+        const files = await fileRepository.listAllEvenNotActiveByUserId(userId);
+
+        await fileRepository.deleteByUserId(userId);
+        await directoryRepository.deleteByUserId(userId);
+
+        // Deletar usuário do banco
+        await userRepository.delete(userId);
+
+        for (const file of files) {
+          if (file.path) {
+            await deleteFileFromPath(file.path);
+          }
+        }
+
+        res.json({ message: "Conta deletada com sucesso" });
+      } catch (error) {
+        console.error("Erro ao deletar conta:", error);
+        res.status(500).json({ error: "Erro interno do servidor" });
+      }
+    },
+  );
 };

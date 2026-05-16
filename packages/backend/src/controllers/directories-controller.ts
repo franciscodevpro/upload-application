@@ -1,6 +1,8 @@
 import { Express } from "express";
+import fs from "node:fs";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { directoryRepository } from "../repository/sqlite";
+import { directoryRepository, fileRepository } from "../repository/sqlite";
 import { authMiddleware } from "../middleware";
 
 export const directoriesController = (expressServer: Express) => {
@@ -92,6 +94,7 @@ export const directoriesController = (expressServer: Express) => {
           if (!current.parent) break;
           const parentDirectory = await directoryRepository.findById(
             current.parent,
+            (req as any).userId || null,
           );
           if (!parentDirectory) break;
           current = parentDirectory;
@@ -164,6 +167,49 @@ export const directoriesController = (expressServer: Express) => {
     },
   );
 
+  const deleteFileFromPath = async (filePath: string) => {
+    const fullPath = path.resolve(filePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+  };
+
+  const deleteFilesInDirectory = async (
+    directoryId: string,
+    userId: string | null,
+  ) => {
+    const files = await fileRepository.findByParent(directoryId);
+    for (const file of files) {
+      if (file.id) {
+        await fileRepository.delete(file.id, userId);
+      }
+      if (file.path) {
+        await deleteFileFromPath(file.path);
+      }
+    }
+  };
+
+  const deleteDirectories = async (
+    directoryId: string,
+    userId: string | null,
+  ): Promise<void> => {
+    const subdirectories = await directoryRepository.findByParent(
+      directoryId,
+      userId,
+    );
+
+    if (subdirectories.length > 0) {
+      for (const subdir of subdirectories) {
+        if (subdir.id) {
+          await deleteDirectories(subdir.id, userId);
+        }
+      }
+    }
+
+    await directoryRepository.delete(directoryId, userId);
+    await deleteFilesInDirectory(directoryId, userId);
+  };
+
   // 10. Delete (Invalidate) Directory
   expressServer.delete(
     "/api/directories/:id",
@@ -180,7 +226,7 @@ export const directoriesController = (expressServer: Express) => {
           return res.status(404).json({ error: "Directory not found" });
         }
 
-        await directoryRepository.delete(id, (req as any).userId || null);
+        await deleteDirectories(id, (req as any).userId || null);
 
         res.json({ message: "Directory deleted successfully", id });
       } catch (error) {

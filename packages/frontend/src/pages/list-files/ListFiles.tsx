@@ -13,6 +13,7 @@ import {
   Music,
   Folder,
   Info,
+  Trash
 } from 'lucide-react';
 import PromptModal from '../../components/PromptModal';
 import UploadFile from '../upload-file/UploadFile';
@@ -157,6 +158,21 @@ export default function ListFiles() {
     setIsPromptOpen(true);
   };
 
+  const deleteItem = async ({ item, type }: { item: FileItem | DirectoryItem; type: 'file' | 'directory'; }): Promise<void> => {
+    const endpoint = type === 'file' ? 'files' : 'directories';
+    const res = await fetch(`${API_URL}/${endpoint}/${item.id}`, {
+      method: 'DELETE',
+      headers: authorizationToken ? { 'Authorization': `Bearer ${authorizationToken}` } : {},
+    });
+
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      const errorData = await res.json().catch(() => null);
+      window.alert(errorData?.error || `Erro ao deletar ${type === 'file' ? 'arquivo' : 'diretório'}.`);
+    }
+  };
+
   const handleCreateDirectory = async (dirName: string): Promise<void> => {
     const parentPath = directoryDetails?.address?.map((dir) => dir.name).join('/') || '';
     const path = parentPath ? `${parentPath}/${dirName.trim()}` : dirName.trim();
@@ -269,7 +285,7 @@ export default function ListFiles() {
                     {getDirectoryType()}
                   </span>
                 </div>
-                <div className="w-24 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
+                <div className="w-32 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
                   <HardDrive size={14} className="mr-2 opacity-60" />
                   <span>{formatSize(directory.size)}</span>
                 </div>
@@ -277,15 +293,25 @@ export default function ListFiles() {
                   <Clock size={14} className="mr-2 opacity-60" />
                   {new Date(directory.createdAt).toLocaleString('pt-BR')}
                 </div>
-                <div className="w-16 text-center px-1 box-border overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setDetailsItem({ item: directory, type: 'directory' })}
-                    className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
-                    title="Ver detalhes"
-                  >
-                    <Info size={18} />
-                  </button>
+                <div className="w-24 text-center px-1 box-border overflow-hidden">
+                  <div className="flex gap-0.5 justify-center">
+                    <button
+                        type="button"
+                        onClick={() => deleteItem({ item: directory, type: 'directory' })}
+                        className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
+                        title="Ver detalhes"
+                      >
+                        <Trash size={18} />
+                      </button>
+                    <button
+                      type="button"
+                      onClick={() => setDetailsItem({ item: directory, type: 'directory' })}
+                      className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
+                      title="Ver detalhes"
+                    >
+                      <Info size={18} />
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
@@ -317,7 +343,7 @@ export default function ListFiles() {
                     {getFileType(file.name)}
                   </span>
                 </div>
-                <div className="w-24 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
+                <div className="w-32 text-text-secondary text-sm items-center px-1 box-border hidden md:flex overflow-hidden">
                   <HardDrive size={14} className="mr-2 opacity-60" />
                   {formatSize(file.size)}
                 </div>
@@ -325,8 +351,16 @@ export default function ListFiles() {
                   <Clock size={14} className="mr-2 opacity-60" />
                   {new Date(file.date).toLocaleString('pt-BR')}
                 </div>
-                <div className="w-16 text-center px-1 box-border overflow-hidden">
-                  <div className="flex items-center justify-center gap-2">
+                <div className="w-24 text-center px-1 box-border overflow-hidden">
+                  <div className="flex gap-0.5 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => deleteItem({ item: file, type: 'file' })}
+                      className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
+                      title="Ver detalhes"
+                    >
+                      <Trash size={18} />
+                    </button>
                     <button
                       type="button"
                       onClick={() => setDetailsItem({ item: file, type: 'file' })}
