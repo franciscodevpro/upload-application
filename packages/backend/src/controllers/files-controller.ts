@@ -1,6 +1,8 @@
 import { Express } from "express";
+import fs from "node:fs";
 import { fileRepository } from "../repository/sqlite";
 import { authMiddleware } from "../middleware";
+import path from "node:path";
 
 export const filesController = (expressServer: Express) => {
   expressServer.get("/api/files", authMiddleware, async (req, res) => {
@@ -48,6 +50,13 @@ export const filesController = (expressServer: Express) => {
     }
   });
 
+  const deleteFileFromPath = async (filePath: string) => {
+    const fullPath = path.resolve(filePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+  };
+
   // 4. Delete File (Mark as deleted)
   expressServer.delete("/api/files/:id", authMiddleware, async (req, res) => {
     try {
@@ -62,6 +71,11 @@ export const filesController = (expressServer: Express) => {
       }
 
       await fileRepository.delete(id, (req as any).userId || null);
+
+      if (filedata.path) {
+        await deleteFileFromPath(filedata.path);
+      }
+
       res.json({ message: "File deleted successfully", id });
     } catch (error) {
       console.error("Error deleting file:", error);

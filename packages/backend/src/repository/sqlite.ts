@@ -163,6 +163,10 @@ export const fileRepository = {
       );
   },
 
+  async listAllEvenNotActiveByUserId(userId: string): Promise<IFiles[]> {
+    return db.select().from(files).where(eq(files.userId, userId));
+  },
+
   async findById(
     id: string,
     userId: string | null = null,
@@ -212,14 +216,17 @@ export const fileRepository = {
 
   async delete(id: string, userId: string | null = null): Promise<any> {
     return db
-      .update(files)
-      .set({ status: "deleted" })
+      .delete(files)
       .where(
         and(
           eq(files.id, id),
           userId ? eq(files.userId, userId) : isNull(files.userId),
         ),
       );
+  },
+
+  async deleteByUserId(userId: string): Promise<any> {
+    return db.delete(files).where(eq(files.userId, userId));
   },
 };
 
@@ -319,17 +326,17 @@ export const directoryRepository = {
 
   async delete(id: string, userId: string | null = null): Promise<any> {
     return db
-      .update(directories)
-      .set({
-        status: "deleted",
-        updatedAt: new Date().toISOString(),
-      })
+      .delete(directories)
       .where(
         and(
           eq(directories.id, id),
           userId ? eq(directories.userId, userId) : isNull(directories.userId),
         ),
       );
+  },
+
+  async deleteByUserId(userId: string): Promise<any> {
+    return db.delete(directories).where(eq(directories.userId, userId));
   },
 };
 
@@ -378,12 +385,6 @@ export const userRepository = {
   },
 
   async delete(id: string): Promise<any> {
-    return db
-      .update(users)
-      .set({
-        status: "deleted",
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(users.id, id));
+    return db.delete(users).where(eq(users.id, id));
   },
 };

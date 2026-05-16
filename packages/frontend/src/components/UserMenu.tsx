@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User, ChevronDown, LogIn } from 'lucide-react';
+import { LogOut, User, ChevronDown, LogIn, Trash } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 
 interface UserMenuProps {
@@ -8,7 +8,7 @@ interface UserMenuProps {
 }
 
 export default function UserMenu({ goToAuth, onLogoutSuccess }: UserMenuProps) {
-  const { user, logout, isLoading } = useAuthContext();
+  const { user, logout, isLoading, accessToken } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!user) {
@@ -38,6 +38,32 @@ export default function UserMenu({ goToAuth, onLogoutSuccess }: UserMenuProps) {
     }
   };
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:1080/api';
+
+  const handleAccountDelete = async () => {
+    try {
+      fetch(`${API_URL}/auth/delete-account`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+        },
+      })
+      .then(async (res) => {
+        if (res.ok) {
+          await logout();
+          setIsOpen(false);
+          onLogoutSuccess?.();
+        } else {
+          const errorData = await res.json();
+          console.error("Erro ao deletar conta:", errorData);
+        }
+      });
+    } catch (err) {
+      console.error('Erro ao deletar conta:', err);
+    }
+  };
+
   return (
     <div className="relative">
       <button
@@ -60,9 +86,18 @@ export default function UserMenu({ goToAuth, onLogoutSuccess }: UserMenuProps) {
           </div>
 
           <button
+            onClick={handleAccountDelete}
+            disabled={isLoading}
+            className="w-full px-4 py-2 text-left bg-danger-400 text-red-600 hover:bg-red-50 rounded-none flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash size={16} />
+            <span className="text-sm">Excluir Conta</span>
+          </button>
+
+          <button
             onClick={handleLogout}
             disabled={isLoading}
-            className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2 text-left rounded-t-none text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogOut size={16} />
             <span className="text-sm">Sair</span>
