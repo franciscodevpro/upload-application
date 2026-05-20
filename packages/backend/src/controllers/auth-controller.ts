@@ -171,6 +171,11 @@ export const authController = (expressServer: Express) => {
   expressServer.get("/api/auth/me", authMiddleware, async (req, res) => {
     try {
       const userId = (req as any).userId;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
       const user = await userRepository.findById(userId);
 
       if (!user) {

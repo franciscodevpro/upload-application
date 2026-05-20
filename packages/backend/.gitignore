@@ -18,6 +18,14 @@ tsconfig.tsbuildinfo
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Jest
+jest.config.js
 *.suo
 *.ntvs*
 *.njsproj
