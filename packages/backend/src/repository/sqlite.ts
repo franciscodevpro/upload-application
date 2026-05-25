@@ -1,60 +1,81 @@
 import Database from "better-sqlite3";
-import { and, eq, isNull, SQLWrapper, Table } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { and, eq, isNull } from "drizzle-orm";
+import { BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
 import { files } from "../db/schemas/files";
 import { directories } from "../db/schemas/directories";
 import { users } from "../db/schemas/users";
 
-const sqlite = new Database("./files_database.db");
-const db = drizzle({ client: sqlite });
+var db:
+  | (BetterSQLite3Database<Record<string, never>> & {
+      $client: Database.Database;
+    })
+  | null = null;
+
+export const dbInstance = () => {
+  if (!db) {
+    const sqlite = new Database("./files_database.db");
+    db = drizzle({ client: sqlite });
+  }
+
+  return db;
+};
 
 // Open a database file (or create if it doesn't exist)
 //const db = new Database("files_database.db");
 
-// Create a table
-db.run(`
-  CREATE TABLE IF NOT EXISTS files (
-    id VARCHAR(200) PRIMARY KEY,
-    originalName TEXT,
-    newName TEXT,
-    extension VARCHAR(50),
-    size INTEGER,
-    type VARCHAR(100),
-    uploadAt VARCHAR(200),
-    path TEXT,
-    parent TEXT,
-    status TEXT DEFAULT 'active',
-    userId TEXT REFERENCES users(id),
-    privacy TEXT DEFAULT 'private'
-  )
-`);
+export const initializeDatabase = () => {
+  // Create a table
+  db = dbInstance();
+  db.run(
+    `
+    CREATE TABLE IF NOT EXISTS files (
+      id VARCHAR(200) PRIMARY KEY,
+      originalName TEXT,
+      newName TEXT,
+      extension VARCHAR(50),
+      size INTEGER,
+      type VARCHAR(100),
+      uploadAt VARCHAR(200),
+      path TEXT,
+      parent TEXT,
+      status TEXT DEFAULT 'active',
+      userId TEXT REFERENCES users(id),
+      privacy TEXT DEFAULT 'private'
+    )
+    `,
+  );
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS directories (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    size INTEGER DEFAULT 0,
-    parent TEXT,
-    path TEXT,
-    createdAt TEXT NOT NULL,
-    updatedAt TEXT NOT NULL,
-    status TEXT DEFAULT 'active',
-    userId TEXT REFERENCES users(id),
-    privacy TEXT DEFAULT 'private'
-  )
-`);
+  db.run(
+    `
+    CREATE TABLE IF NOT EXISTS directories (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      size INTEGER DEFAULT 0,
+      parent TEXT,
+      path TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      userId TEXT REFERENCES users(id),
+      privacy TEXT DEFAULT 'private'
+    )
+    `,
+  );
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    refreshToken TEXT,
-    createdAt TEXT NOT NULL,
-    updatedAt TEXT NOT NULL,
-    status TEXT DEFAULT 'active'
-  )
-`);
+  db.run(
+    `
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      refreshToken TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      status TEXT DEFAULT 'active'
+    )
+    `,
+  );
+};
 
 interface IFiles {
   id: string | null;
@@ -75,7 +96,7 @@ interface IDirectory {
   id: string;
   name: string;
   size: number;
-  parent: string;
+  parent: string | null;
   path: string;
   createdAt: string;
   updatedAt: string;
@@ -128,7 +149,7 @@ export const fileRepository = {
     parent = null,
     userId = null,
   }: Omit<IFiles, "status" | "privacy">): Promise<any> {
-    return db.insert(files).values({
+    return dbInstance().insert(files).values({
       id,
       originalName,
       newName,
@@ -151,7 +172,7 @@ export const fileRepository = {
     parent?: string | null;
     userId?: string | null;
   }): Promise<IFiles[]> {
-    return db
+    return dbInstance()
       .select()
       .from(files)
       .where(
@@ -164,14 +185,14 @@ export const fileRepository = {
   },
 
   async listAllEvenNotActiveByUserId(userId: string): Promise<IFiles[]> {
-    return db.select().from(files).where(eq(files.userId, userId));
+    return dbInstance().select().from(files).where(eq(files.userId, userId));
   },
 
   async findById(
     id: string,
     userId: string | null = null,
   ): Promise<IFiles | undefined> {
-    const data = await db
+    const data = await dbInstance()
       .select()
       .from(files)
       .where(
@@ -187,7 +208,7 @@ export const fileRepository = {
     parentId: string,
     userId: string | null = null,
   ): Promise<IFiles[]> {
-    return db
+    return dbInstance()
       .select()
       .from(files)
       .where(
@@ -203,7 +224,7 @@ export const fileRepository = {
     userId: string | null = null,
     updates: Partial<Omit<IFiles, "id">>,
   ): Promise<any> {
-    return db
+    return dbInstance()
       .update(files)
       .set(updates)
       .where(
@@ -215,7 +236,7 @@ export const fileRepository = {
   },
 
   async delete(id: string, userId: string | null = null): Promise<any> {
-    return db
+    return dbInstance()
       .delete(files)
       .where(
         and(
@@ -226,7 +247,7 @@ export const fileRepository = {
   },
 
   async deleteByUserId(userId: string): Promise<any> {
-    return db.delete(files).where(eq(files.userId, userId));
+    return dbInstance().delete(files).where(eq(files.userId, userId));
   },
 };
 
@@ -241,7 +262,7 @@ export const directoryRepository = {
     updatedAt,
     userId = null,
   }: Omit<IDirectory, "status" | "privacy">): Promise<any> {
-    return db.insert(directories).values({
+    return dbInstance().insert(directories).values({
       id,
       name,
       size,
@@ -262,7 +283,7 @@ export const directoryRepository = {
     parent?: string | null;
     userId?: string | null;
   }): Promise<IDirectoryNullable[]> {
-    return db
+    return dbInstance()
       .select()
       .from(directories)
       .where(
@@ -278,7 +299,7 @@ export const directoryRepository = {
     id: string,
     userId: string | null = null,
   ): Promise<IDirectoryNullable | undefined> {
-    const data = await db
+    const data = await dbInstance()
       .select()
       .from(directories)
       .where(
@@ -294,7 +315,7 @@ export const directoryRepository = {
     parentId: string,
     userId: string | null = null,
   ): Promise<IDirectoryNullable[]> {
-    return db
+    return dbInstance()
       .select()
       .from(directories)
       .where(
@@ -310,7 +331,7 @@ export const directoryRepository = {
     userId: string | null = null,
     updates: Partial<Omit<IDirectory, "id">>,
   ): Promise<any> {
-    return db
+    return dbInstance()
       .update(directories)
       .set({
         ...updates,
@@ -325,7 +346,7 @@ export const directoryRepository = {
   },
 
   async delete(id: string, userId: string | null = null): Promise<any> {
-    return db
+    return dbInstance()
       .delete(directories)
       .where(
         and(
@@ -336,7 +357,9 @@ export const directoryRepository = {
   },
 
   async deleteByUserId(userId: string): Promise<any> {
-    return db.delete(directories).where(eq(directories.userId, userId));
+    return dbInstance()
+      .delete(directories)
+      .where(eq(directories.userId, userId));
   },
 };
 
@@ -350,7 +373,7 @@ export const userRepository = {
   }: Omit<IUser, "refreshToken" | "status"> & {
     refreshToken?: string | null;
   }): Promise<any> {
-    return db.insert(users).values({
+    return dbInstance().insert(users).values({
       id,
       email,
       password,
@@ -362,12 +385,18 @@ export const userRepository = {
   },
 
   async findByEmail(email: string): Promise<IUserNullable | undefined> {
-    const data = await db.select().from(users).where(eq(users.email, email));
+    const data = await dbInstance()
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
     return data.at(0);
   },
 
   async findById(id: string): Promise<IUserNullable | undefined> {
-    const data = await db.select().from(users).where(eq(users.id, id));
+    const data = await dbInstance()
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
     return data.at(0);
   },
 
@@ -375,7 +404,7 @@ export const userRepository = {
     id: string,
     refreshToken: string | null,
   ): Promise<any> {
-    return db
+    return dbInstance()
       .update(users)
       .set({
         refreshToken,
@@ -385,6 +414,6 @@ export const userRepository = {
   },
 
   async delete(id: string): Promise<any> {
-    return db.delete(users).where(eq(users.id, id));
+    return dbInstance().delete(users).where(eq(users.id, id));
   },
 };

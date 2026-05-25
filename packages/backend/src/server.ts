@@ -7,6 +7,7 @@ import { directoriesController } from "./controllers/directories-controller";
 import { filesController } from "./controllers/files-controller";
 import { uploadFilesController } from "./controllers/upload-files-controller";
 import { downloadFilesController } from "./controllers/download-files-controller";
+import { initializeDatabase, dbInstance } from "./repository/sqlite";
 
 const app = express();
 app.use(cors());
@@ -15,6 +16,8 @@ setupSwagger(app);
 
 const host = "127.0.0.1"; // Acessível na rede
 const port = 1080;
+
+initializeDatabase(); // Inicializa o banco de dados e cria as tabelas
 
 // FILE UPLOAD ENDPOINTS
 uploadFilesController(app);
