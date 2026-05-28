@@ -1,9 +1,8 @@
 import { Express } from "express";
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { directoryRepository, fileRepository } from "../repository/sqlite";
 import { authMiddleware } from "../middleware";
+import { deleteFileFromPath } from "../utils/delete-files-utils";
 
 export const directoriesController = (expressServer: Express) => {
   // 5. Create Directory
@@ -166,13 +165,6 @@ export const directoriesController = (expressServer: Express) => {
       }
     },
   );
-
-  const deleteFileFromPath = async (filePath: string) => {
-    const fullPath = path.resolve(filePath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  };
 
   const deleteFilesInDirectory = async (
     directoryId: string,
