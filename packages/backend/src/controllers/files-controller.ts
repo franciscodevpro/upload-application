@@ -3,21 +3,27 @@ import fs from "node:fs";
 import { fileRepository } from "../repository/sqlite";
 import { authMiddleware } from "../middleware";
 import path from "node:path";
+import { deleteFileFromPath } from "../utils/delete-files-utils";
 
 export const filesController = (expressServer: Express) => {
   expressServer.get("/api/files", authMiddleware, async (req, res) => {
-    const parent = (req.query.parent as string) || null; // Garantir que seja null se não fornecido
-    const result = await fileRepository.list({
-      parent,
-      userId: (req as any).userId || null,
-    });
-    res.json(
-      result.map((file) => ({
-        ...file,
-        name: file.originalName,
-        date: file.uploadAt,
-      })),
-    );
+    try {
+      const parent = (req.query.parent as string) || null; // Garantir que seja null se não fornecido
+      const result = await fileRepository.list({
+        parent,
+        userId: (req as any).userId || null,
+      });
+      res.json(
+        result.map((file) => ({
+          ...file,
+          name: file.originalName,
+          date: file.uploadAt,
+        })),
+      );
+    } catch (error) {
+      console.error("Error listing file:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   // 3. Update File
@@ -49,13 +55,6 @@ export const filesController = (expressServer: Express) => {
       res.status(500).json({ error: "Internal server error" });
     }
   });
-
-  const deleteFileFromPath = async (filePath: string) => {
-    const fullPath = path.resolve(filePath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  };
 
   // 4. Delete File (Mark as deleted)
   expressServer.delete("/api/files/:id", authMiddleware, async (req, res) => {
