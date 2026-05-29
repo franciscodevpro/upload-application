@@ -10,6 +10,7 @@ import { generateTokens, verifyRefreshToken } from "../auth";
 import { authMiddleware } from "../middleware";
 import path from "node:path";
 import fs from "node:fs";
+import { deleteFileFromPath } from "../utils/delete-files-utils";
 
 export const authController = (expressServer: Express) => {
   // 1. Register
@@ -192,13 +193,6 @@ export const authController = (expressServer: Express) => {
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
-
-  const deleteFileFromPath = async (filePath: string) => {
-    const fullPath = path.resolve(filePath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  };
 
   expressServer.delete(
     "/api/auth/delete-account",
