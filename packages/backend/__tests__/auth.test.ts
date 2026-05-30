@@ -8,6 +8,7 @@
 import {
   generateAccessToken,
   generateRefreshToken,
+  generateTokens,
   verifyAccessToken,
   verifyRefreshToken,
 } from "../src/auth";
@@ -61,6 +62,26 @@ describe("Auth Module", () => {
 
       // Tokens devem ser diferentes (diferentes timestamps)
       expect(token1).not.toBe(token2);
+    });
+
+    it("deve gerar um access token e um refresh token em uma chamada", () => {
+      const { accessToken, refreshToken } = generateTokens({
+        userId: testUserId,
+        email: testEmail,
+      });
+
+      expect(accessToken).toBeDefined();
+      expect(refreshToken).toBeDefined();
+      expect(typeof accessToken).toBe("string");
+      expect(typeof refreshToken).toBe("string");
+      const decodedAccessToken = jwt.decode(accessToken);
+      const decodedRefreshToken = jwt.decode(refreshToken);
+      expect(decodedAccessToken).toBeDefined();
+      expect((decodedAccessToken as any).userId).toBe(testUserId);
+      expect((decodedAccessToken as any).email).toBe(testEmail);
+      expect(decodedRefreshToken).toBeDefined();
+      expect((decodedRefreshToken as any).userId).toBe(testUserId);
+      expect((decodedRefreshToken as any).email).toBe(testEmail);
     });
   });
 

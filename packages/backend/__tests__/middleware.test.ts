@@ -158,6 +158,14 @@ describe("Auth Middleware", () => {
       authMiddleware(req as Request, res as Response, next);
       expect(res.status).toHaveBeenCalledWith(401);
     });
+
+    it("deve usar status 401 algum erro interno no processo de auth", () => {
+      req.headers = undefined;
+
+      authMiddleware(req as Request, res as Response, next);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Falha na autenticação" });
+    });
   });
 
   describe("Case Sensitivity", () => {
