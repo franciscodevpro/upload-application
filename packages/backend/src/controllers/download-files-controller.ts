@@ -14,14 +14,14 @@ export const downloadFilesController = (expressServer: Express) => {
     const filenames = req.query.files as string | string[];
     const files = Array.isArray(filenames) ? filenames : [filenames];
 
-    if (!files || files.length === 0)
-      return res.status(400).send("Nenhum arquivo selecionado");
+    if (!files || files.length === 0 || !files[0])
+      return res.status(400).json({ error: "No file selected" });
 
     if (files.length === 1) {
       // Download de arquivo único (Stream direto)
       const filedata = await fileRepository.findById(files[0]);
       if (!filedata || !filedata.originalName)
-        return res.status(404).send("Nenhum arquivo encontrado");
+        return res.status(404).json({ error: "File not found" });
       const filePath = path.join(storagePath, files[0]);
       return res.download(filePath, filedata.originalName, undefined);
     } else {
