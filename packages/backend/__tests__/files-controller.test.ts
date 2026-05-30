@@ -189,7 +189,10 @@ describe("Files Controller - HTTP Endpoints", () => {
     it("deve atualizar um arquivo publico sem userId", async () => {
       initAppWithoutUserId();
 
-      mockedFileRepository.findById.mockResolvedValue(testFile);
+      mockedFileRepository.findById.mockResolvedValue({
+        ...testFile,
+        extension: null,
+      });
 
       const response = await request(app).put("/api/files/test-id").send({
         originalName: "Updated File Name",
@@ -208,7 +211,7 @@ describe("Files Controller - HTTP Endpoints", () => {
         "test-id",
         null,
         {
-          originalName: "Updated File Name" + "." + testFile.extension,
+          originalName: "Updated File Name",
         },
       );
     });
