@@ -7,12 +7,12 @@
 
 import request from "supertest";
 import express, { Express } from "express";
-import { fileRepository } from "../src/repository/sqlite";
-import { filesController } from "../src/controllers/files-controller";
+import { fileRepository } from "../../src/repository/sqlite";
+import { filesController } from "../../src/controllers/files-controller";
 
 // Mock do banco de dados
-jest.mock("../src/repository/sqlite");
-jest.mock("../src/utils/delete-files-utils", () => ({
+jest.mock("../../src/repository/sqlite");
+jest.mock("../../src/utils/delete-files-utils", () => ({
   deleteFileFromPath: jest.fn(),
 }));
 

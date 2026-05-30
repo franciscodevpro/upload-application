@@ -13,16 +13,16 @@ import {
   userRepository,
   fileRepository,
   directoryRepository,
-} from "../src/repository/sqlite"; // Importar para ativar o mock
-import { authController } from "../src/controllers/auth-controller";
-import * as auth from "../src/auth";
+} from "../../src/repository/sqlite"; // Importar para ativar o mock
+import { authController } from "../../src/controllers/auth-controller";
+import * as auth from "../../src/auth";
 import bcryptjs from "bcryptjs";
 
 // Mock do banco de dados
-jest.mock("../src/repository/sqlite");
-jest.mock("../src/auth");
+jest.mock("../../src/repository/sqlite");
+jest.mock("../../src/auth");
 jest.mock("bcryptjs");
-jest.mock("../src/utils/delete-files-utils", () => ({
+jest.mock("../../src/utils/delete-files-utils", () => ({
   deleteFileFromPath: jest.fn(),
 }));
 

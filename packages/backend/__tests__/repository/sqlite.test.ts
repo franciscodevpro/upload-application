@@ -5,13 +5,12 @@
  * - Repositório de Usuários (userRepository)
  */
 
-import { set } from "supertest/lib/cookies";
 import {
   fileRepository,
   directoryRepository,
   userRepository,
   initializeDatabase,
-} from "../src/repository/sqlite";
+} from "../../src/repository/sqlite";
 
 import { drizzle } from "drizzle-orm/better-sqlite3";
 

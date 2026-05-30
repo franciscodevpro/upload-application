@@ -5,14 +5,14 @@
 
 import request from "supertest";
 import express, { Express } from "express";
-import { fileRepository } from "../src/repository/sqlite";
+import { fileRepository } from "../../src/repository/sqlite";
 import path from "path";
 //import archiver from "archiver";
 import fs from "node:fs";
-import { downloadFilesController } from "../src/controllers/download-files-controller";
+import { downloadFilesController } from "../../src/controllers/download-files-controller";
 
 // Mock do banco de dados
-jest.mock("../src/repository/sqlite");
+jest.mock("../../src/repository/sqlite");
 jest.mock("path");
 jest.mock("archiver", () =>
   jest.fn().mockReturnValue({
