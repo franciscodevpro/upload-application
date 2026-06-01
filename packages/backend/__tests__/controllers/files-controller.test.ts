@@ -9,6 +9,12 @@ import request from "supertest";
 import express, { Express } from "express";
 import { fileRepository } from "../../src/repository/sqlite";
 import { filesController } from "../../src/controllers/files-controller";
+import jestOpenAPI from "jest-openapi";
+import path from "path";
+
+const swaggerURL = path.join(__dirname, "../../src/swagger-definition.json");
+
+jestOpenAPI(swaggerURL);
 
 // Mock do banco de dados
 jest.mock("../../src/repository/sqlite");
@@ -91,6 +97,8 @@ describe("Files Controller - HTTP Endpoints", () => {
           userId: testUserId,
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar os arquivos sem usuário", async () => {
@@ -113,6 +121,8 @@ describe("Files Controller - HTTP Endpoints", () => {
           userId: null,
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar um array vazio se não houver arquivos", async () => {
@@ -129,6 +139,8 @@ describe("Files Controller - HTTP Endpoints", () => {
           userId: testUserId,
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -147,6 +159,8 @@ describe("Files Controller - HTTP Endpoints", () => {
           userId: testUserId,
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -184,6 +198,8 @@ describe("Files Controller - HTTP Endpoints", () => {
           parent: testFile.parent,
         },
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve atualizar um arquivo publico sem userId", async () => {
@@ -214,6 +230,8 @@ describe("Files Controller - HTTP Endpoints", () => {
           originalName: "Updated File Name",
         },
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 caso o arquivo não exista", async () => {
@@ -227,6 +245,8 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("File not found");
       expect(mockedFileRepository.findById).toHaveBeenCalledWith("test-id");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -244,6 +264,8 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
       expect(mockedFileRepository.findById).toHaveBeenCalledWith("test-id");
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -268,6 +290,8 @@ describe("Files Controller - HTTP Endpoints", () => {
         testFile.id,
         testUserId,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 se arquivo não existir", async () => {
@@ -282,6 +306,8 @@ describe("Files Controller - HTTP Endpoints", () => {
         "invalid-id",
         testUserId,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve deletar um arquivo com sucesso sem usuário", async () => {
@@ -305,6 +331,8 @@ describe("Files Controller - HTTP Endpoints", () => {
         testFile.id,
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -321,6 +349,8 @@ describe("Files Controller - HTTP Endpoints", () => {
         "file-123",
         testUserId,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 });

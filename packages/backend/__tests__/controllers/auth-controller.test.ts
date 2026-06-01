@@ -17,6 +17,12 @@ import {
 import { authController } from "../../src/controllers/auth-controller";
 import * as auth from "../../src/auth";
 import bcryptjs from "bcryptjs";
+import jestOpenAPI from "jest-openapi";
+import path from "path";
+
+const swaggerURL = path.join(__dirname, "../../src/swagger-definition.json");
+
+jestOpenAPI(swaggerURL);
 
 // Mock do banco de dados
 jest.mock("../../src/repository/sqlite");
@@ -100,6 +106,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
           updatedAt: expect.anything(),
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se email estiver vazio", async () => {
@@ -110,6 +118,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty("error");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se senha estiver vazia", async () => {
@@ -120,6 +130,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty("error");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se senha for muito curta", async () => {
@@ -130,6 +142,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain("6 caracteres");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 409 se email já existe", async () => {
@@ -148,6 +162,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(409);
       expect(response.body.error).toContain("Email já cadastrado");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 no caso de erro interno", async () => {
@@ -165,6 +181,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(mockedUserRepository.findByEmail).toHaveBeenCalledWith(
         testUser.email,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -203,6 +221,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         testUser.id!,
         "any_newRefreshToken",
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 401 se senha estiver incorreta", async () => {
@@ -228,6 +248,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Credenciais inválidas");
       expect(userRepository.findByEmail).toHaveBeenCalledWith(testUser.email);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se email estiver vazio", async () => {
@@ -237,6 +259,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       });
 
       expect(response.status).toBe(400);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se senha estiver vazia", async () => {
@@ -246,6 +270,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       });
 
       expect(response.status).toBe(400);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 se usuário não existir", async () => {
@@ -258,6 +284,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Credenciais inválidas");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 no caso de erro interno", async () => {
@@ -275,6 +303,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(mockedUserRepository.findByEmail).toHaveBeenCalledWith(
         testUser.email,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -311,6 +341,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         testUser.id!,
         "any_newRefreshToken",
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se não existir refreshToken", async () => {
@@ -318,6 +350,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain("Refresh token é obrigatório");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 401 se refreshToken for invalido", async () => {
@@ -334,6 +368,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(mockedAuth.verifyRefreshToken).toHaveBeenCalledWith(
         "existing-refresh-token",
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 401 se refreshToken for diferente do registrado na base", async () => {
@@ -361,6 +397,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         "any_invalid_refreshToken",
       );
       expect(userRepository.findById).toHaveBeenCalledWith(testUser.id);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 no caso de erro interno", async () => {
@@ -377,6 +415,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(mockedAuth.verifyRefreshToken).toHaveBeenCalledWith(
         "any_invalid_refreshToken",
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -390,6 +430,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         testUser.id!,
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 no caso de erro interno", async () => {
@@ -405,6 +447,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         testUser.id!,
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -432,6 +476,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         }),
       );
       expect(mockedUserRepository.findById).toHaveBeenCalledWith(testUser.id);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 401 sem token", async () => {
@@ -440,6 +486,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Usuário não autenticado");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 401 com token inválido", async () => {
@@ -448,6 +496,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
         .set("Authorization", "Bearer invalid.token.here");
 
       expect(response.status).toBe(401);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 se usuário não existir", async () => {
@@ -458,6 +508,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body.error).toContain("Usuário não encontrado");
       expect(mockedUserRepository.findById).toHaveBeenCalledWith(testUser.id);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 em caso de erro interno", async () => {
@@ -468,6 +520,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body.error).toContain("Erro interno do servidor");
       expect(mockedUserRepository.findById).toHaveBeenCalledWith(testUser.id);
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -508,6 +562,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(directoryRepository.deleteByUserId).toHaveBeenCalledWith(
         testUser.id,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 401 sem token", async () => {
@@ -516,6 +572,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Usuário não autenticado");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 em caso de erro interno", async () => {
@@ -530,6 +588,8 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(
         mockedFileRepository.listAllEvenNotActiveByUserId,
       ).toHaveBeenCalledWith(testUser.id);
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 });

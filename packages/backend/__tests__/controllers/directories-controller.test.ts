@@ -12,6 +12,12 @@ import {
   fileRepository,
 } from "../../src/repository/sqlite";
 import { directoriesController } from "../../src/controllers/directories-controller";
+import jestOpenAPI from "jest-openapi";
+import path from "path";
+
+const swaggerURL = path.join(__dirname, "../../src/swagger-definition.json");
+
+jestOpenAPI(swaggerURL);
 
 // Mock do banco de dados
 jest.mock("../../src/repository/sqlite");
@@ -97,6 +103,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         path: testDirectory.path,
         userId: testUserId,
       });
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve criar um novo diretório sem usuário", async () => {
@@ -122,6 +130,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         path: null,
         userId: null,
       });
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 400 se o nome não for fornecido", async () => {
@@ -132,6 +142,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Name is required");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -148,6 +160,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve criar diretório com parent válido", async () => {
@@ -162,6 +176,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty("parent", "parent-dir-123");
       expect(mockedDirectoryRepository.create).toHaveBeenCalled();
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -176,6 +192,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(200);
       expect(response.body[0]).toHaveProperty("id", testDirectory.id);
       expect(response.body[0]).toHaveProperty("name", testDirectory.name);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar a lista de subdiretórios sem usuário", async () => {
@@ -193,6 +211,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         "parent-dir-123",
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar um array vazio se não houver subdiretórios", async () => {
@@ -205,6 +225,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body).toHaveLength(0);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -219,6 +241,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -239,6 +263,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
           userId: testUserId,
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar os diretórios sem usuário", async () => {
@@ -258,6 +284,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
           userId: null,
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar um array vazio se não houver diretórios", async () => {
@@ -268,6 +296,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body).toHaveLength(0);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -280,6 +310,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -304,6 +336,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         testDirectory.id,
         testUserId,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar um diretório sem usuário", async () => {
@@ -320,6 +354,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         testDirectory.id,
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 se diretório não existir", async () => {
@@ -330,6 +366,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Directory not found");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -348,6 +386,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve construir o caminho (address) corretamente para subdiretórios", async () => {
@@ -390,6 +430,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.body.address[0]).toHaveProperty("id", "parent-123");
       expect(response.body.address[1]).toHaveProperty("id", "child-12");
       expect(response.body.address[2]).toHaveProperty("id", "child-123");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve construir o caminho (address) corretamente para subdiretórios sem usuário", async () => {
@@ -457,6 +499,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         "parent-123",
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve construir o caminho (address) e não repetir diretórios", async () => {
@@ -502,6 +546,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         null,
       );
       expect(mockedDirectoryRepository.findById).toHaveBeenCalledTimes(2);
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -534,6 +580,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
           path: testDirectory.path,
         },
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve atualizar um diretório publico sem userId", async () => {
@@ -557,6 +605,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
           name: "Updated Directory Name",
         },
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 caso o diretório não exista", async () => {
@@ -570,6 +620,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Directory not found");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -587,6 +639,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 
@@ -643,6 +697,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       );
       expect(response.body).toHaveProperty("id", testDirectory.id);
       expect(mockedDirectoryRepository.delete).toHaveBeenCalled();
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 404 se diretório não existir", async () => {
@@ -653,6 +709,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Directory not found");
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve deletar subdiretórios recursivamente", async () => {
@@ -680,6 +738,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(200);
       expect(mockedDirectoryRepository.delete).toHaveBeenCalledTimes(2);
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve deletar subdiretórios recursivamente sem usuário", async () => {
@@ -712,6 +772,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         testDirectory.id,
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
 
     it("deve retornar erro 500 se ocorrer um erro interno", async () => {
@@ -730,6 +792,8 @@ describe("Directories Controller - HTTP Endpoints", () => {
         "parent-dir-123",
         testUserId,
       );
+
+      expect(response).toSatisfyApiSpec();
     });
   });
 });
