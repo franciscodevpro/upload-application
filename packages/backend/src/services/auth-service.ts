@@ -82,6 +82,7 @@ export class AuthService {
     const { accessToken, refreshToken } = generateTokens({
       userId: user.id!,
       email: user.email!,
+      userRights: user.access_rights as any,
     });
 
     // Salvar refresh token no banco
@@ -122,6 +123,7 @@ export class AuthService {
       generateTokens({
         userId: user.id!,
         email: user.email!,
+        userRights: user.access_rights as any,
       });
 
     // Salvar novo refresh token

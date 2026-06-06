@@ -23,6 +23,7 @@ export class FilesService {
     parent?: string;
     originalName?: string;
     userId?: string;
+    privacy?: string;
   }): Promise<any> {
     const { id } = params;
     const { parent, originalName } = params;
@@ -41,6 +42,7 @@ export class FilesService {
         ? `${originalName}.${extension}`
         : originalName;
     }
+    if (params.privacy !== undefined) updates.privacy = params.privacy;
 
     await this.fileRepository.update(id, params.userId || null, updates);
     const updatedFile = await this.fileRepository.findById(id);

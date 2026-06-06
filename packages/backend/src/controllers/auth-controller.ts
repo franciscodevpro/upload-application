@@ -10,6 +10,8 @@ import { AuthService } from "../services/auth-service";
 import { NotFoundError } from "../errors/not-found-error";
 import { BadRequestError } from "../errors/bad-request-error";
 import { ConflictError } from "../errors/conflict-error";
+import { error } from "console";
+import { logger } from "../utils/logger-utils";
 
 export const authController = (expressServer: Express) => {
   const authService = new AuthService(
@@ -37,7 +39,7 @@ export const authController = (expressServer: Express) => {
       if (error instanceof ConflictError) {
         return res.status(409).json({ error: error.message });
       }
-      console.error("Erro ao registrar usuário:", error);
+      logger.error("Erro ao registrar usuário:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -56,7 +58,7 @@ export const authController = (expressServer: Express) => {
       if (error instanceof UnauthorizedError) {
         return res.status(401).json({ error: error.message });
       }
-      console.error("Erro ao fazer login:", error);
+      logger.error("Erro ao fazer login:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -75,7 +77,7 @@ export const authController = (expressServer: Express) => {
       if (error instanceof UnauthorizedError) {
         return res.status(401).json({ error: error.message });
       }
-      console.error("Erro ao atualizar token:", error);
+      logger.error("Erro ao atualizar token:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -88,7 +90,7 @@ export const authController = (expressServer: Express) => {
       const result = await authService.logout({ userId });
       res.status(200).json({ message: result.message });
     } catch (error) {
-      console.error("Erro ao fazer logout:", error);
+      logger.error("Erro ao fazer logout:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -107,7 +109,7 @@ export const authController = (expressServer: Express) => {
       if (error instanceof NotFoundError) {
         return res.status(404).json({ error: error.message });
       }
-      console.error("Erro ao buscar usuário:", error);
+      logger.error("Erro ao buscar usuário:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -125,7 +127,7 @@ export const authController = (expressServer: Express) => {
         if (error instanceof UnauthorizedError) {
           return res.status(401).json({ error: error.message });
         }
-        console.error("Erro ao deletar conta:", error);
+        logger.error("Erro ao deletar conta:", error);
         res.status(500).json({ error: "Erro interno do servidor" });
       }
     },

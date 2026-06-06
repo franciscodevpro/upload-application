@@ -4,6 +4,7 @@ import { verifyAccessToken } from "./auth";
 export interface AuthRequest extends Request {
   userId?: string;
   email?: string;
+  userRights?: string;
 }
 
 export const authMiddleware = (
@@ -28,6 +29,7 @@ export const authMiddleware = (
 
     req.userId = decoded.userId;
     req.email = decoded.email;
+    req.userRights = decoded.userRights;
     next();
   } catch (error) {
     return res.status(401).json({ error: "Falha na autenticação" });
