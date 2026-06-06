@@ -1,85 +1,68 @@
 import { Express } from "express";
-import fs from "node:fs";
 import { fileRepository } from "../repository/sqlite";
 import { authMiddleware } from "../middleware";
-import path from "node:path";
+import { FilesService } from "../services/files-service";
+import { NotFoundError } from "../errors/not-found-error";
 
 export const filesController = (expressServer: Express) => {
+  const filesService = new FilesService(fileRepository);
+
   expressServer.get("/api/files", authMiddleware, async (req, res) => {
-    const parent = (req.query.parent as string) || null; // Garantir que seja null se não fornecido
-    const result = await fileRepository.list({
-      parent,
-      userId: (req as any).userId || null,
-    });
-    res.json(
-      result.map((file) => ({
-        ...file,
-        name: file.originalName,
-        date: file.uploadAt,
-      })),
-    );
+    try {
+      const result = await filesService.findAll({
+        parent: req.query.parent as string,
+        userId: (req as any).userId,
+      });
+      res.json(
+        result.map((file) => ({
+          ...file,
+          name: file.originalName,
+          date: file.uploadAt,
+        })),
+      );
+    } catch (error) {
+      console.error("Error listing file:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
-  // 3. Update File
   expressServer.put("/api/files/:id", authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       const { parent, originalName } = req.body;
 
-      const filedata = await fileRepository.findById(id);
-      if (!filedata) {
-        return res.status(404).json({ error: "File not found" });
-      }
+      const updatedFile = await filesService.update({
+        id,
+        parent,
+        originalName,
+        userId: (req as any).userId,
+      });
 
-      const updates: any = {};
-      if (parent !== undefined) updates.parent = parent;
-      if (originalName !== undefined) {
-        // Preserve the extension
-        const extension = filedata.extension;
-        updates.originalName = extension
-          ? `${originalName}.${extension}`
-          : originalName;
-      }
-
-      await fileRepository.update(id, (req as any).userId || null, updates);
-      const updatedFile = await fileRepository.findById(id);
       res.json(updatedFile);
     } catch (error) {
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
+      }
+
       console.error("Error updating file:", error);
-      res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  const deleteFileFromPath = async (filePath: string) => {
-    const fullPath = path.resolve(filePath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  };
-
-  // 4. Delete File (Mark as deleted)
   expressServer.delete("/api/files/:id", authMiddleware, async (req, res) => {
     try {
-      const { id } = req.params;
+      const result = await filesService.delete({
+        id: req.params.id,
+        userId: (req as any).userId,
+      });
 
-      const filedata = await fileRepository.findById(
-        id,
-        (req as any).userId || null,
-      );
-      if (!filedata) {
-        return res.status(404).json({ error: "File not found" });
-      }
-
-      await fileRepository.delete(id, (req as any).userId || null);
-
-      if (filedata.path) {
-        await deleteFileFromPath(filedata.path);
-      }
-
-      res.json({ message: "File deleted successfully", id });
+      res.json(result);
     } catch (error) {
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
+      }
       console.error("Error deleting file:", error);
-      res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 };
