@@ -14,7 +14,7 @@ export const authMiddleware = (
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !/[Bb]earer /i.test(authHeader)) {
       return next();
       //return res.status(401).json({ error: "Token não fornecido" });
     }
