@@ -47,6 +47,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     id: "test-123",
     email: "test@example.com",
     password: "password123",
+    userRights: "read,write",
   };
 
   const initAppWithoutUserId = () => {
@@ -153,6 +154,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
+        access_rights: "read,write",
       });
 
       const response = await request(app).post("/api/auth/register").send({
@@ -204,6 +206,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
+        access_rights: "read,write",
       });
 
       const response = await request(app).post("/api/auth/login").send({
@@ -215,6 +218,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(mockedAuth.generateTokens).toHaveBeenCalledWith({
         userId: testUser.id!,
         email: testUser.email!,
+        userRights: testUser.userRights!,
       });
       expect(userRepository.findByEmail).toHaveBeenCalledWith(testUser.email);
       expect(userRepository.updateRefreshToken).toHaveBeenCalledWith(
@@ -238,6 +242,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
+        access_rights: "read,write",
       });
 
       const response = await request(app).post("/api/auth/login").send({
@@ -326,6 +331,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
+        access_rights: "read,write",
       });
 
       const response = await request(app).post("/api/auth/refresh").send({
@@ -385,6 +391,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
+        access_rights: "read,write",
       });
 
       const response = await request(app).post("/api/auth/refresh").send({
@@ -463,6 +470,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
+        access_rights: "read,write",
       });
 
       const response = await request(app).get("/api/auth/me");

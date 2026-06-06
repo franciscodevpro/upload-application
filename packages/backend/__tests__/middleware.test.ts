@@ -33,6 +33,7 @@ describe("Auth Middleware", () => {
       const token = generateAccessToken({
         userId: "user-123",
         email: "test@example.com",
+        userRights: "read,write",
       });
       req.headers = {
         authorization: `Bearer ${token}`,
@@ -43,6 +44,7 @@ describe("Auth Middleware", () => {
       expect(next).toHaveBeenCalled();
       expect((req as any).userId).toBe("user-123");
       expect((req as any).email).toBe("test@example.com");
+      expect((req as any).userRights).toBe("read,write");
     });
 
     it("deve chamar next() se header Authorization não existir", () => {
@@ -91,6 +93,7 @@ describe("Auth Middleware", () => {
       const token = generateAccessToken({
         userId: "user-456",
         email: "user@test.com",
+        userRights: "read,write",
       });
       req.headers = {
         authorization: `Bearer ${token}`,
@@ -105,6 +108,7 @@ describe("Auth Middleware", () => {
       const token = generateAccessToken({
         userId: "user-456",
         email: "user@test.com",
+        userRights: "read,write",
       });
       req.headers = {
         authorization: `Bearer ${token}`,
@@ -119,6 +123,7 @@ describe("Auth Middleware", () => {
       const token = generateAccessToken({
         userId: "user-789",
         email: "test@app.com",
+        userRights: "read,write",
       });
       req.headers = {
         authorization: `Bearer ${token}`,
@@ -173,6 +178,7 @@ describe("Auth Middleware", () => {
       const token = generateAccessToken({
         userId: "user-123",
         email: "test@example.com",
+        userRights: "read,write",
       });
 
       // Teste com "bearer" (minúsculo)

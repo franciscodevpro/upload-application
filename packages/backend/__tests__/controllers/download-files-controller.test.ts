@@ -63,6 +63,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     // Mock do middleware de autenticação
     app.use((req, res, next) => {
       (req as any).userId = testUserId;
+      (req as any).userRights = "read,write";
       next();
     });
 
@@ -97,6 +98,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     // Mock do middleware de autenticação
     app.use((req, res, next) => {
       (req as any).userId = testUserId;
+      (req as any).userRights = "read,write";
       next();
     });
 
