@@ -1,62 +1,42 @@
 import { Express } from "express";
-import bcryptjs from "bcryptjs";
-import { randomUUID } from "node:crypto";
 import {
   directoryRepository,
   fileRepository,
   userRepository,
 } from "../repository/sqlite";
-import { generateTokens, verifyRefreshToken } from "../auth";
 import { authMiddleware } from "../middleware";
-import path from "node:path";
-import fs from "node:fs";
-import { deleteFileFromPath } from "../utils/delete-files-utils";
+import { UnauthorizedError } from "../errors/unauthorized-error";
+import { AuthService } from "../services/auth-service";
+import { NotFoundError } from "../errors/not-found-error";
+import { BadRequestError } from "../errors/bad-request-error";
+import { ConflictError } from "../errors/conflict-error";
 
 export const authController = (expressServer: Express) => {
+  const authService = new AuthService(
+    userRepository,
+    fileRepository,
+    directoryRepository,
+  );
+
   // 1. Register
   expressServer.post("/api/auth/register", async (req, res) => {
     try {
       const { email, password } = req.body;
 
-      // Validação
-      if (!email || !password) {
-        return res
-          .status(400)
-          .json({ error: "Email e senha são obrigatórios" });
-      }
-
-      if (password.length < 6) {
-        return res
-          .status(400)
-          .json({ error: "Senha deve ter pelo menos 6 caracteres" });
-      }
-
-      // Verificar se usuário já existe
-      const existingUser = await userRepository.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({ error: "Email já cadastrado" });
-      }
-
-      // Hash da senha
-      const hashedPassword = await bcryptjs.hash(password, 10);
-      const userId = randomUUID();
-      const now = new Date().toISOString();
-
-      // Criar usuário
-      await userRepository.create({
-        id: userId,
-        email,
-        password: hashedPassword,
-        createdAt: now,
-        updatedAt: now,
-      });
+      const result = await authService.signin({ email, password });
 
       res.status(201).json({
-        message: "Usuário registrado com sucesso",
-        userId,
-        email,
+        message: result.message,
+        userId: result.userId,
+        email: result.email,
       });
     } catch (error) {
+      if (error instanceof BadRequestError) {
+        return res.status(400).json({ error: error.message });
+      }
+      if (error instanceof ConflictError) {
+        return res.status(409).json({ error: error.message });
+      }
       console.error("Erro ao registrar usuário:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
@@ -67,44 +47,15 @@ export const authController = (expressServer: Express) => {
     try {
       const { email, password } = req.body;
 
-      // Validação
-      if (!email || !password) {
-        return res
-          .status(400)
-          .json({ error: "Email e senha são obrigatórios" });
-      }
-
-      // Buscar usuário
-      const user = await userRepository.findByEmail(email);
-      if (!user || !user.password) {
-        return res.status(401).json({ error: "Credenciais inválidas" });
-      }
-
-      // Verificar senha
-      const isPasswordValid = await bcryptjs.compare(password, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ error: "Credenciais inválidas" });
-      }
-
-      // Gerar tokens
-      const { accessToken, refreshToken } = generateTokens({
-        userId: user.id!,
-        email: user.email!,
-      });
-
-      // Salvar refresh token no banco
-      await userRepository.updateRefreshToken(user.id!, refreshToken);
-
-      res.json({
-        message: "Login realizado com sucesso",
-        accessToken,
-        refreshToken,
-        user: {
-          id: user.id,
-          email: user.email,
-        },
-      });
+      const result = await authService.login({ email, password });
+      res.status(200).json(result);
     } catch (error) {
+      if (error instanceof BadRequestError) {
+        return res.status(400).json({ error: error.message });
+      }
+      if (error instanceof UnauthorizedError) {
+        return res.status(401).json({ error: error.message });
+      }
       console.error("Erro ao fazer login:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
@@ -115,39 +66,15 @@ export const authController = (expressServer: Express) => {
     try {
       const { refreshToken } = req.body;
 
-      if (!refreshToken) {
-        return res.status(400).json({ error: "Refresh token é obrigatório" });
-      }
-
-      // Verificar refresh token
-      const decoded = verifyRefreshToken(refreshToken);
-      if (!decoded) {
-        return res
-          .status(401)
-          .json({ error: "Refresh token inválido ou expirado" });
-      }
-
-      // Buscar usuário
-      const user = await userRepository.findById(decoded.userId);
-      if (!user || user.refreshToken !== refreshToken) {
-        return res.status(401).json({ error: "Refresh token não corresponde" });
-      }
-
-      // Gerar novos tokens
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-        generateTokens({
-          userId: user.id!,
-          email: user.email!,
-        });
-
-      // Salvar novo refresh token
-      await userRepository.updateRefreshToken(user.id!, newRefreshToken);
-
-      res.json({
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      });
+      const result = await authService.refresToken({ refreshToken });
+      res.status(200).json(result);
     } catch (error) {
+      if (error instanceof BadRequestError) {
+        return res.status(400).json({ error: error.message });
+      }
+      if (error instanceof UnauthorizedError) {
+        return res.status(401).json({ error: error.message });
+      }
       console.error("Erro ao atualizar token:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
@@ -158,10 +85,8 @@ export const authController = (expressServer: Express) => {
     try {
       const userId = (req as any).userId;
 
-      // Limpar refresh token do banco
-      await userRepository.updateRefreshToken(userId, null);
-
-      res.json({ message: "Logout realizado com sucesso" });
+      const result = await authService.logout({ userId });
+      res.status(200).json({ message: result.message });
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
@@ -173,22 +98,15 @@ export const authController = (expressServer: Express) => {
     try {
       const userId = (req as any).userId;
 
-      if (!userId) {
-        return res.status(401).json({ error: "Usuário não autenticado" });
-      }
-
-      const user = await userRepository.findById(userId);
-
-      if (!user) {
-        return res.status(404).json({ error: "Usuário não encontrado" });
-      }
-
-      res.json({
-        id: user.id,
-        email: user.email,
-        createdAt: user.createdAt,
-      });
+      const result = await authService.getMe({ userId });
+      res.status(200).json(result);
     } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return res.status(401).json({ error: error.message });
+      }
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
+      }
       console.error("Erro ao buscar usuário:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
@@ -201,26 +119,12 @@ export const authController = (expressServer: Express) => {
       try {
         const userId = (req as any).userId;
 
-        if (!userId) {
-          return res.status(401).json({ error: "Usuário não autenticado" });
-        }
-
-        const files = await fileRepository.listAllEvenNotActiveByUserId(userId);
-
-        await fileRepository.deleteByUserId(userId);
-        await directoryRepository.deleteByUserId(userId);
-
-        // Deletar usuário do banco
-        await userRepository.delete(userId);
-
-        for (const file of files) {
-          if (file.path) {
-            await deleteFileFromPath(file.path);
-          }
-        }
-
-        res.json({ message: "Conta deletada com sucesso" });
+        const result = await authService.deleteAccount({ userId });
+        res.status(200).json({ message: result.message });
       } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          return res.status(401).json({ error: error.message });
+        }
         console.error("Erro ao deletar conta:", error);
         res.status(500).json({ error: "Erro interno do servidor" });
       }
