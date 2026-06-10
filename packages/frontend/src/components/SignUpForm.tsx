@@ -38,6 +38,20 @@ export default function SignUpForm({ onSignUpSuccess, onSwitchToLogin }: SignUpF
     return true;
   };
 
+  const handleRecaptcha = async (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if ((window as any).grecaptcha) {
+        (window as any).grecaptcha.ready(function() {
+          (window as any).grecaptcha.execute(import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY, {action: 'submit'}).then(function(token: string) {
+              return resolve(token);
+          });
+        });
+      } else {
+        return resolve(null);
+      }
+    });
+  }
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -52,12 +66,15 @@ export default function SignUpForm({ onSignUpSuccess, onSwitchToLogin }: SignUpF
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:1080/api';
 
     try {
+        
+      const recaptchaToken = await handleRecaptcha();
+
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, recaptchaToken }),
       });
 
       const data = await response.json();

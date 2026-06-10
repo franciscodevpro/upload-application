@@ -13,7 +13,7 @@ export const downloadFilesController = (expressServer: Express) => {
     const files = Array.isArray(filenames) ? filenames : [filenames];
 
     try {
-      await downloadFilesService.get(files, res);
+      await downloadFilesService.get(files, (req as any).userId, res);
     } catch (error) {
       if (error instanceof NotFoundError) {
         return res.status(404).json({ error: error.message });

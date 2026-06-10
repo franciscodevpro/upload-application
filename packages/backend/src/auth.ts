@@ -11,6 +11,7 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 export interface TokenPayload {
   userId: string;
   email: string;
+  userRights: string;
 }
 
 export const generateAccessToken = (payload: TokenPayload): string => {

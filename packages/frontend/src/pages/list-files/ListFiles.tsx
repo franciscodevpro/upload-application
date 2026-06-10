@@ -13,13 +13,16 @@ import {
   Music,
   Folder,
   Info,
-  Trash
+  Trash,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import PromptModal from '../../components/PromptModal';
 import UploadFile from '../upload-file/UploadFile';
 import ItemDetailsCard from '../../components/ItemDetailsCard';
 import AuthPage from '../auth/AuthPage';
 import UserMenu from '../../components/UserMenu';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 interface FileItem {
   id: string;
@@ -28,6 +31,7 @@ interface FileItem {
   date: string;
   type: string;
   newName: string;
+  privacy: string;
 }
 
 interface FileTypeInfo {
@@ -106,6 +110,7 @@ export default function ListFiles() {
   const [detailsItem, setDetailsItem] = useState<{ item: FileItem | DirectoryItem; type: 'file' | 'directory'; } | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authorizationToken, setAuthorizationToken] = useState(window.localStorage.getItem('accessToken') || null);
+  const { user } = useAuthContext();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:1080/api';
 
@@ -170,6 +175,25 @@ export default function ListFiles() {
     } else {
       const errorData = await res.json().catch(() => null);
       window.alert(errorData?.error || `Erro ao deletar ${type === 'file' ? 'arquivo' : 'diretório'}.`);
+    }
+  };
+
+  const changePrivacyItem = async ({ item, privacy, type }: { item: FileItem | DirectoryItem; privacy: string; type: 'file' | 'directory' }): Promise<void> => {
+    const endpoint = type === 'file' ? 'files' : 'directories';
+    const res = await fetch(`${API_URL}/${endpoint}/${item.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authorizationToken}`
+      },
+      body: JSON.stringify({ privacy })
+    });
+
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      const errorData = await res.json().catch(() => null);
+      window.alert(errorData?.error || `Erro ao tentar tornar o ${type === 'file' ? 'arquivo' : 'diretório'} ${privacy === 'private' ? 'privado' : 'público'}.`);
     }
   };
 
@@ -240,12 +264,14 @@ export default function ListFiles() {
           </div>
           
           <div className="flex items-center gap-2">
-            <button
-              onClick={createDirectory}
-              className="flex items-center px-6 py-3 rounded-2xl font-medium bg-success-600 text-white hover:bg-success-700 shadow-lg hover:shadow-glow-green transition-all duration-200 hover:scale-105 font-sans"
-            >
-              + Nova Pasta
-            </button>
+            { user && user.access_rights.includes("write") &&
+              <button
+                onClick={createDirectory}
+                className="flex items-center px-6 py-3 rounded-2xl font-medium bg-success-600 text-white hover:bg-success-700 shadow-lg hover:shadow-glow-green transition-all duration-200 hover:scale-105 font-sans"
+              >
+                + Nova Pasta
+              </button>
+            }
             <button 
               onClick={() => window.location.href = `${API_URL}/download?${new URLSearchParams(selected.map(s => ['files', s])).toString()}`}
               disabled={selected.length === 0}
@@ -369,6 +395,15 @@ export default function ListFiles() {
                     >
                       <Info size={18} />
                     </button>
+                    { user && user.access_rights.includes("write-public") &&
+                    <button
+                      type="button"
+                      onClick={() => changePrivacyItem({ item: file, privacy: file.privacy == 'private' ? "public" : "private", type: 'file' })}
+                      className="inline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 hover:bg-background-secondary hover:text-primary-300"
+                      title={file.privacy == 'private' ? "Tornar público" : "Tornar privado"}
+                    >
+                      {file.privacy == 'private'? <Eye size={18} /> : <EyeOff size={18} />}
+                    </button>}
                     <a 
                       href={`${API_URL}/download?files=${encodeURIComponent(file.newName)}`}
                       className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-primary-400 transition hover:bg-background-secondary hover:text-primary-300"
@@ -391,7 +426,9 @@ export default function ListFiles() {
         </div>
       </div>
 
-      <UploadFile onUploadSuccess={() => fetchData(directoryId, authorizationToken || undefined)} parentId={directoryId} accessToken={authorizationToken || undefined} />
+      {user && user.access_rights.includes("write") &&
+        <UploadFile onUploadSuccess={() => fetchData(directoryId, authorizationToken || undefined)} parentId={directoryId} accessToken={authorizationToken || undefined} />
+      }
 
       {isAuthOpen && (
         <AuthPage open={true} onClose={() => setIsAuthOpen(false)} onLoginSuccess={(tokens) => {setAuthorizationToken(tokens.accessToken); window.location.href = '/';}} />

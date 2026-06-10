@@ -10,6 +10,8 @@ import { AuthService } from "../services/auth-service";
 import { NotFoundError } from "../errors/not-found-error";
 import { BadRequestError } from "../errors/bad-request-error";
 import { ConflictError } from "../errors/conflict-error";
+import { logger as Logger } from "../utils/logger-utils";
+import { verifyRecaptcha } from "../utils/verify-recaptcha-utils";
 
 export const authController = (expressServer: Express) => {
   const authService = new AuthService(
@@ -18,9 +20,20 @@ export const authController = (expressServer: Express) => {
     directoryRepository,
   );
 
+  const logger: typeof Logger = Logger;
+
   // 1. Register
   expressServer.post("/api/auth/register", async (req, res) => {
     try {
+      const recaptchaValid = await verifyRecaptcha(
+        req.body.recaptchaToken,
+        req.ip,
+      );
+
+      if (!recaptchaValid) {
+        return res.status(400).json({ error: "reCAPTCHA verification failed" });
+      }
+
       const { email, password } = req.body;
 
       const result = await authService.signin({ email, password });
@@ -37,7 +50,8 @@ export const authController = (expressServer: Express) => {
       if (error instanceof ConflictError) {
         return res.status(409).json({ error: error.message });
       }
-      console.error("Erro ao registrar usuário:", error);
+
+      Logger.error("Erro ao registrar usuário:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -45,6 +59,15 @@ export const authController = (expressServer: Express) => {
   // 2. Login
   expressServer.post("/api/auth/login", async (req, res) => {
     try {
+      const recaptchaValid = await verifyRecaptcha(
+        req.body.recaptchaToken,
+        req.ip,
+      );
+
+      if (!recaptchaValid) {
+        return res.status(400).json({ error: "reCAPTCHA verification failed" });
+      }
+
       const { email, password } = req.body;
 
       const result = await authService.login({ email, password });
@@ -56,7 +79,8 @@ export const authController = (expressServer: Express) => {
       if (error instanceof UnauthorizedError) {
         return res.status(401).json({ error: error.message });
       }
-      console.error("Erro ao fazer login:", error);
+
+      Logger.error("Erro ao fazer login:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -75,7 +99,8 @@ export const authController = (expressServer: Express) => {
       if (error instanceof UnauthorizedError) {
         return res.status(401).json({ error: error.message });
       }
-      console.error("Erro ao atualizar token:", error);
+
+      Logger.error("Erro ao atualizar token:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -88,7 +113,7 @@ export const authController = (expressServer: Express) => {
       const result = await authService.logout({ userId });
       res.status(200).json({ message: result.message });
     } catch (error) {
-      console.error("Erro ao fazer logout:", error);
+      Logger.error("Erro ao fazer logout:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -107,7 +132,8 @@ export const authController = (expressServer: Express) => {
       if (error instanceof NotFoundError) {
         return res.status(404).json({ error: error.message });
       }
-      console.error("Erro ao buscar usuário:", error);
+
+      Logger.error("Erro ao buscar usuário:", error);
       res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -125,7 +151,8 @@ export const authController = (expressServer: Express) => {
         if (error instanceof UnauthorizedError) {
           return res.status(401).json({ error: error.message });
         }
-        console.error("Erro ao deletar conta:", error);
+
+        Logger.error("Erro ao deletar conta:", error);
         res.status(500).json({ error: "Erro interno do servidor" });
       }
     },

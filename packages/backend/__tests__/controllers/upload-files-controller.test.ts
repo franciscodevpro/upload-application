@@ -84,26 +84,14 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
 
   const testUserId = "user-123";
 
-  const initAppWithUserId = () => {
+  const initAppGeneric = (userId: string | undefined, userRights: string) => {
     app = express();
     app.use(express.json());
 
     // Mock do middleware de autenticação
     app.use((req, res, next) => {
-      (req as any).userId = testUserId;
-      next();
-    });
-
-    uploadFilesController(app);
-  };
-
-  const initAppWithoutUserId = () => {
-    app = express();
-    app.use(express.json());
-
-    // Mock do middleware de autenticação
-    app.use((req, res, next) => {
-      (req as any).userId = undefined;
+      (req as any).userId = userId;
+      (req as any).userRights = userRights;
       next();
     });
 
@@ -111,7 +99,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
   };
 
   beforeEach(() => {
-    initAppWithUserId();
+    initAppGeneric(testUserId, "read,write");
     mockedPath.resolve.mockReturnValue("any_storagePath");
     mockedPath.extname.mockReturnValue("any");
   });
@@ -174,7 +162,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
       mockedFileRepository.save.mockRejectedValue(new Error());
       mockedPath.join.mockReturnValue("any_filePath");
       mockedFs.existsSync.mockReturnValue(true);
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
 
       const response = await request(app).post(`/api/upload/file`);
 
@@ -194,6 +182,15 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
           userId: null,
         }),
       );
+    });
+
+    it("deve retornar 403 caso o usuário não tenha permissão para fazer upload", async () => {
+      initAppGeneric(testUserId, undefined as any);
+      const response = await request(app).post(`/api/upload/file`);
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden");
     });
   });
 });

@@ -7,7 +7,11 @@ import { directoriesController } from "./controllers/directories-controller";
 import { filesController } from "./controllers/files-controller";
 import { uploadFilesController } from "./controllers/upload-files-controller";
 import { downloadFilesController } from "./controllers/download-files-controller";
-import { initializeDatabase, dbInstance } from "./repository/sqlite";
+import { initializeDatabase } from "./repository/sqlite";
+import dotenv from "dotenv";
+import { logger } from "./utils/logger-utils";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -35,5 +39,5 @@ directoriesController(app);
 authController(app);
 
 app.listen(port, () => {
-  console.log(`Servidor rodando em http://${host}:${port}`);
+  logger.info(`Servidor rodando em http://${host}:${port}`);
 });

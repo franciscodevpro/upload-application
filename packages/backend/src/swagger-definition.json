@@ -222,6 +222,14 @@
               }
             }
           },
+          "403": {
+            "description": "Permissão negada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
           "404": {
             "description": "Arquivo nao encontrado",
             "content": {
@@ -259,6 +267,14 @@
                 "schema": {
                   "$ref": "#/components/schemas/SuccessDeletionResponse"
                 }
+              }
+            }
+          },
+          "403": {
+            "description": "Permissão negada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           },
@@ -363,6 +379,14 @@
           },
           "400": {
             "description": "Dados invalidos",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Permissão negada",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" }
@@ -485,6 +509,14 @@
               }
             }
           },
+          "403": {
+            "description": "Permissão negada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
           "404": {
             "description": "Diretorio nao encontrado",
             "content": {
@@ -522,6 +554,14 @@
                 "schema": {
                   "$ref": "#/components/schemas/SuccessDeletionResponse"
                 }
+              }
+            }
+          },
+          "403": {
+            "description": "Permissão negada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           },

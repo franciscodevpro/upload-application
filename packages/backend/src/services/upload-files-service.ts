@@ -5,9 +5,12 @@ import { Server } from "@tus/server";
 import { FileStore } from "@tus/file-store";
 import { randomUUID } from "node:crypto";
 import { fileRepository as FileRepository } from "../repository/sqlite";
+import { logger as Logger } from "../utils/logger-utils";
 
 export class UploadFilesService {
   tusServer: any;
+
+  logger: typeof Logger = Logger;
 
   constructor(private readonly fileRepository: typeof FileRepository) {
     const saveFiledataIfDoNotExists = async (filedata: {
@@ -35,12 +38,8 @@ export class UploadFilesService {
 
       try {
         await this.fileRepository.save(fileInfo);
-
-        console.log(
-          `Arquivo processado: ${filedata.name} (${filedata.size} bytes)`,
-        );
       } catch (err) {
-        console.error("Erro ao processar finalização de arquivo:", err);
+        this.logger.error("Erro ao processar finalização de arquivo:", err);
       }
     };
 
@@ -51,9 +50,6 @@ export class UploadFilesService {
       },
       datastore: new FileStore({ directory: this.storagePath }),
       onUploadFinish(req, res, upload) {
-        console.log(
-          `Upload finalizado: ${upload.id} (${upload.size} bytes) usuário: ${(req as any).userId || "desconecido"}`,
-        );
         saveFiledataIfDoNotExists({
           id: upload.id,
           name: (upload.metadata as any).filename,

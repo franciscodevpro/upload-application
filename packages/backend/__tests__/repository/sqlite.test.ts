@@ -820,7 +820,8 @@ describe("SQLite Repository", () => {
       refreshToken TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL,
-      status TEXT DEFAULT 'active'
+      status TEXT DEFAULT 'active',
+      access_rights TEXT DEFAULT 'read,write'
     )
     `,
       );
