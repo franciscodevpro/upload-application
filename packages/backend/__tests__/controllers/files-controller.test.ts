@@ -174,10 +174,12 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         1,
         "test-id",
+        testUserId,
       );
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         2,
         "test-id",
+        testUserId,
       );
       expect(mockedFileRepository.update).toHaveBeenCalledWith(
         "test-id",
@@ -213,10 +215,12 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         1,
         "test-id",
+        testUserId,
       );
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         2,
         "test-id",
+        testUserId,
       );
       expect(mockedFileRepository.update).toHaveBeenCalledWith(
         "test-id",
@@ -247,10 +251,12 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         1,
         "test-id",
+        undefined,
       );
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         2,
         "test-id",
+        undefined,
       );
       expect(mockedFileRepository.update).toHaveBeenCalledWith(
         "test-id",
@@ -302,7 +308,10 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("File not found");
-      expect(mockedFileRepository.findById).toHaveBeenCalledWith("test-id");
+      expect(mockedFileRepository.findById).toHaveBeenCalledWith(
+        "test-id",
+        testUserId,
+      );
 
       expect(response).toSatisfyApiSpec();
     });
@@ -321,7 +330,10 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
-      expect(mockedFileRepository.findById).toHaveBeenCalledWith("test-id");
+      expect(mockedFileRepository.findById).toHaveBeenCalledWith(
+        "test-id",
+        testUserId,
+      );
 
       expect(response).toSatisfyApiSpec();
     });

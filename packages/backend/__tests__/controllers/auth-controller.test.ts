@@ -19,6 +19,7 @@ import * as auth from "../../src/auth";
 import bcryptjs from "bcryptjs";
 import jestOpenAPI from "jest-openapi";
 import path from "path";
+import * as verifyRecaptchaUtils from "../../src/utils/verify-recaptcha-utils";
 
 const swaggerURL = path.join(__dirname, "../../src/swagger-definition.json");
 
@@ -31,6 +32,7 @@ jest.mock("bcryptjs");
 jest.mock("../../src/utils/delete-files-utils", () => ({
   deleteFileFromPath: jest.fn(),
 }));
+jest.mock("../../src/utils/verify-recaptcha-utils");
 
 const mockedUserRepository = userRepository as jest.Mocked<
   typeof userRepository
@@ -40,6 +42,9 @@ const mockedFileRepository = fileRepository as jest.Mocked<
 >;
 const mockedAuth = auth as jest.Mocked<typeof auth>;
 const mockedBcryptjs = bcryptjs as jest.Mocked<typeof bcryptjs>;
+const mockedVerifyRecaptchaUtils = verifyRecaptchaUtils as jest.Mocked<
+  typeof verifyRecaptchaUtils
+>;
 
 describe("Auth Controller - HTTP Endpoints", () => {
   let app: Express;
@@ -77,6 +82,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
   beforeEach(() => {
     initAppWithUserId();
+    mockedVerifyRecaptchaUtils.verifyRecaptcha.mockResolvedValue(true);
 
     // Limpar mocks
     jest.clearAllMocks();
@@ -107,6 +113,20 @@ describe("Auth Controller - HTTP Endpoints", () => {
           updatedAt: expect.anything(),
         }),
       );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 400 se der erro ao validar o captcha", async () => {
+      mockedVerifyRecaptchaUtils.verifyRecaptcha.mockResolvedValue(false);
+      const response = await request(app).post("/api/auth/register").send({
+        email: testUser.email,
+        password: testUser.password,
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("reCAPTCHA verification failed");
 
       expect(response).toSatisfyApiSpec();
     });
@@ -253,6 +273,20 @@ describe("Auth Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Credenciais inválidas");
       expect(userRepository.findByEmail).toHaveBeenCalledWith(testUser.email);
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 400 se der erro ao validar o captcha", async () => {
+      mockedVerifyRecaptchaUtils.verifyRecaptcha.mockResolvedValue(false);
+      const response = await request(app).post("/api/auth/login").send({
+        email: "",
+        password: testUser.password,
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("reCAPTCHA verification failed");
 
       expect(response).toSatisfyApiSpec();
     });

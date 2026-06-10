@@ -125,7 +125,10 @@ describe("Files Controller - HTTP Endpoints", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain("Download mock realizado");
-      expect(mockedFileRepository.findById).toHaveBeenCalledWith(testFile.id);
+      expect(mockedFileRepository.findById).toHaveBeenCalledWith(
+        testFile.id,
+        testUserId,
+      );
       expect(mockedPath.join).toHaveBeenCalledWith(
         "any_storagePath",
         testFile.id,
@@ -148,7 +151,10 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("File not found");
-      expect(mockedFileRepository.findById).toHaveBeenCalledWith("invalid-id");
+      expect(mockedFileRepository.findById).toHaveBeenCalledWith(
+        "invalid-id",
+        testUserId,
+      );
     });
 
     it("deve baixar mais de um arquivo compactados com sucesso", async () => {
@@ -170,10 +176,12 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         1,
         testFile.id,
+        testUserId,
       );
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         2,
         "other-fileId",
+        testUserId,
       );
       expect(mockedPath.join).toHaveBeenCalledWith(
         "any_storagePath",
