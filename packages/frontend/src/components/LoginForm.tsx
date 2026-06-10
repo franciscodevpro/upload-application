@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Loader } from 'lucide-react';
 
 interface LoginFormProps {
@@ -12,6 +12,20 @@ export default function LoginForm({ onLoginSuccess, onSwitchToSignup }: LoginFor
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const handleRecaptcha = async (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if ((window as any).grecaptcha) {
+        (window as any).grecaptcha.ready(function() {
+          (window as any).grecaptcha.execute(import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY, {action: 'submit'}).then(function(token: string) {
+              return resolve(token);
+          });
+        });
+      } else {
+        return resolve(null);
+      }
+    });
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +47,14 @@ export default function LoginForm({ onLoginSuccess, onSwitchToSignup }: LoginFor
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:1080/api';
 
     try {
+      const recaptchaToken = await handleRecaptcha();
+
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, recaptchaToken }),
       });
 
       const data = await response.json();
@@ -71,6 +87,17 @@ export default function LoginForm({ onLoginSuccess, onSwitchToSignup }: LoginFor
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://www.google.com/recaptcha/api.js?render=" + import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY;
+    script.async = true;
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
