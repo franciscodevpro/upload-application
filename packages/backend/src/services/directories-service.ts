@@ -125,6 +125,7 @@ export class DirectoryService {
     path?: string;
     size?: number;
     userId: string | null;
+    privacy?: string;
   }): Promise<any> {
     const { id, name, path: dirPath, size, userId } = params;
 
@@ -140,6 +141,7 @@ export class DirectoryService {
     if (name !== undefined) updates.name = name;
     if (dirPath !== undefined) updates.path = dirPath;
     if (size !== undefined) updates.size = size;
+    if (params.privacy !== undefined) updates.privacy = params.privacy;
 
     await this.directoryRepository.update(id, userId || null, updates);
 

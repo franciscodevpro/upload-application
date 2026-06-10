@@ -17,12 +17,14 @@ import jwt from "jsonwebtoken";
 describe("Auth Module", () => {
   const testUserId = "test-user-123";
   const testEmail = "test@example.com";
+  const userRights = "read,write";
 
   describe("Token Generation", () => {
     it("deve gerar um access token válido", () => {
       const token = generateAccessToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
 
       expect(token).toBeDefined();
@@ -33,12 +35,14 @@ describe("Auth Module", () => {
       expect(decoded).toBeDefined();
       expect((decoded as any).userId).toBe(testUserId);
       expect((decoded as any).email).toBe(testEmail);
+      expect((decoded as any).userRights).toBe(userRights);
     });
 
     it("deve gerar um refresh token válido", () => {
       const token = generateRefreshToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
 
       expect(token).toBeDefined();
@@ -48,16 +52,19 @@ describe("Auth Module", () => {
       expect(decoded).toBeDefined();
       expect((decoded as any).userId).toBe(testUserId);
       expect((decoded as any).email).toBe(testEmail);
+      expect((decoded as any).userRights).toBe(userRights);
     });
 
     it("deve gerar tokens diferentes para cada usuário", () => {
       const token1 = generateAccessToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
       const token2 = generateAccessToken({
         userId: "different-user-456",
         email: "different@example.com",
+        userRights: userRights,
       });
 
       // Tokens devem ser diferentes (diferentes timestamps)
@@ -68,6 +75,7 @@ describe("Auth Module", () => {
       const { accessToken, refreshToken } = generateTokens({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
 
       expect(accessToken).toBeDefined();
@@ -90,6 +98,7 @@ describe("Auth Module", () => {
       const token = generateAccessToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
       const decoded = verifyAccessToken(token);
 
@@ -102,6 +111,7 @@ describe("Auth Module", () => {
       const token = generateRefreshToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
       const decoded = verifyRefreshToken(token);
 
@@ -138,6 +148,7 @@ describe("Auth Module", () => {
       const token = generateAccessToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
       const decoded = verifyAccessToken(token) as any;
 
@@ -151,6 +162,7 @@ describe("Auth Module", () => {
       const token = generateRefreshToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
       const decoded = verifyRefreshToken(token) as any;
 
@@ -164,10 +176,12 @@ describe("Auth Module", () => {
       const accessToken = generateAccessToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
       const refreshToken = generateRefreshToken({
         userId: testUserId,
         email: testEmail,
+        userRights: userRights,
       });
 
       const accessDecoded = jwt.decode(accessToken) as any;

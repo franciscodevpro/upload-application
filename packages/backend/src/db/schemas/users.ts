@@ -8,4 +8,5 @@ export const users = sqliteTable("users", {
   createdAt: text().notNull(),
   updatedAt: text().notNull(),
   status: text().default("active"), // active, deleted
+  access_rights: text().default("read,write"), // read, write, write-public, admin
 });

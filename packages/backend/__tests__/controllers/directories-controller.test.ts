@@ -47,25 +47,13 @@ describe("Directories Controller - HTTP Endpoints", () => {
 
   const testUserId = "user-123";
 
-  const initAppWithoutUserId = () => {
+  const initAppGeneric = (userId?: string, userRights?: string) => {
     app = express();
     app.use(express.json());
 
     app.use((req, res, next) => {
-      (req as any).userId = undefined;
-      next();
-    });
-
-    directoriesController(app);
-  };
-
-  const initAppWithUserId = () => {
-    app = express();
-    app.use(express.json());
-
-    // Mock do middleware de autenticação
-    app.use((req, res, next) => {
-      (req as any).userId = testUserId;
+      (req as any).userId = userId;
+      (req as any).userRights = userRights;
       next();
     });
 
@@ -73,7 +61,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
   };
 
   beforeEach(() => {
-    initAppWithUserId();
+    initAppGeneric(testUserId, "read,write");
 
     // Limpar mocks
     jest.clearAllMocks();
@@ -108,7 +96,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve criar um novo diretório sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       mockedDirectoryRepository.create.mockResolvedValue(undefined);
 
       const response = await request(app).post("/api/directories").send({
@@ -130,6 +118,19 @@ describe("Directories Controller - HTTP Endpoints", () => {
         path: null,
         userId: null,
       });
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
+      initAppGeneric(undefined, "read");
+      const response = await request(app).post("/api/directories").send({
+        path: testDirectory.path,
+      });
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden");
 
       expect(response).toSatisfyApiSpec();
     });
@@ -197,7 +198,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar a lista de subdiretórios sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       mockedDirectoryRepository.findByParent.mockResolvedValue([testDirectory]);
 
       const response = await request(app).get(
@@ -268,7 +269,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar os diretórios sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       mockedDirectoryRepository.list.mockResolvedValue([testDirectory]);
 
       const response = await request(app).get(
@@ -341,7 +342,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar um diretório sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       mockedDirectoryRepository.findById.mockResolvedValueOnce(testDirectory);
 
       const response = await request(app).get(
@@ -435,7 +436,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve construir o caminho (address) corretamente para subdiretórios sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       const parentDirectory = {
         id: "parent-123",
         name: "Parent Directory",
@@ -504,7 +505,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve construir o caminho (address) e não repetir diretórios", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
 
       const firstChildDirectory = {
         ...testDirectory,
@@ -584,8 +585,43 @@ describe("Directories Controller - HTTP Endpoints", () => {
       expect(response).toSatisfyApiSpec();
     });
 
+    it("deve atualizar o diretório com privacidade pública", async () => {
+      initAppGeneric(testUserId, "read,write,write-public");
+      mockedDirectoryRepository.findById
+        .mockResolvedValueOnce(testDirectory)
+        .mockResolvedValueOnce({
+          ...testDirectory,
+          name: "Updated Directory Name",
+          parent: null,
+        });
+
+      const response = await request(app).put("/api/directories/test-id").send({
+        name: "Updated Directory Name",
+        size: 0,
+        path: testDirectory.path,
+        privacy: "public",
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("id");
+      expect(response.body).toHaveProperty("name", "Updated Directory Name");
+      expect(response.body).toHaveProperty("size", 0);
+      expect(mockedDirectoryRepository.update).toHaveBeenCalledWith(
+        "test-id",
+        testUserId,
+        {
+          name: "Updated Directory Name",
+          size: 0,
+          path: testDirectory.path,
+          privacy: "public",
+        },
+      );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
     it("deve atualizar um diretório publico sem userId", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
 
       mockedDirectoryRepository.findById.mockResolvedValue(testDirectory);
 
@@ -605,6 +641,38 @@ describe("Directories Controller - HTTP Endpoints", () => {
           name: "Updated Directory Name",
         },
       );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
+      initAppGeneric(undefined, "read");
+      mockedDirectoryRepository.findById.mockResolvedValue(undefined);
+      const response = await request(app).put("/api/directories/test-id").send({
+        name: "Updated Directory Name",
+        size: 0,
+        path: testDirectory.path,
+      });
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden");
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 403 caso o usuário não tenha permissão para escrever conteudo publico", async () => {
+      mockedDirectoryRepository.findById.mockResolvedValue(undefined);
+      const response = await request(app).put("/api/directories/test-id").send({
+        name: "Updated Directory Name",
+        size: 0,
+        path: testDirectory.path,
+        privacy: "public",
+      });
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden to set public privacy");
 
       expect(response).toSatisfyApiSpec();
     });
@@ -743,7 +811,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve deletar subdiretórios recursivamente sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       const subDirectory = {
         id: "subdir-123",
         name: "Subdirectory",
@@ -772,6 +840,20 @@ describe("Directories Controller - HTTP Endpoints", () => {
         testDirectory.id,
         null,
       );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
+      initAppGeneric(undefined, "read");
+
+      const response = await request(app).delete(
+        "/api/directories/parent-dir-123",
+      );
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden");
 
       expect(response).toSatisfyApiSpec();
     });

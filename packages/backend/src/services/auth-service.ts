@@ -82,6 +82,7 @@ export class AuthService {
     const { accessToken, refreshToken } = generateTokens({
       userId: user.id!,
       email: user.email!,
+      userRights: user.access_rights as any,
     });
 
     // Salvar refresh token no banco
@@ -94,6 +95,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        access_rights: user.access_rights,
       },
     };
   }
@@ -122,6 +124,7 @@ export class AuthService {
       generateTokens({
         userId: user.id!,
         email: user.email!,
+        userRights: user.access_rights as any,
       });
 
     // Salvar novo refresh token
@@ -158,6 +161,7 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
+      access_rights: user.access_rights,
       createdAt: user.createdAt,
     };
   }

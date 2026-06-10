@@ -4,6 +4,11 @@ import { authMiddleware } from "../middleware";
 import { DirectoryService } from "../services/directories-service";
 import { BadRequestError } from "../errors/bad-request-error";
 import { NotFoundError } from "../errors/not-found-error";
+import {
+  validateUserCanUploadPublicFiles,
+  validateUserCanWrite,
+} from "../utils/user-rights-validator";
+import { logger } from "../utils/logger-utils";
 
 export const directoriesController = (expressServer: Express) => {
   const directoryService = new DirectoryService(
@@ -12,6 +17,10 @@ export const directoriesController = (expressServer: Express) => {
   );
 
   expressServer.post("/api/directories", authMiddleware, async (req, res) => {
+    if (!validateUserCanWrite((req as any).userRights)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     try {
       const result = await directoryService.create({
         ...req.body,
@@ -23,7 +32,7 @@ export const directoriesController = (expressServer: Express) => {
       if (error instanceof BadRequestError) {
         return res.status(400).json({ error: error.message });
       }
-      console.error("Error creating directory:", error);
+      logger.error("Error creating directory:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -36,7 +45,7 @@ export const directoriesController = (expressServer: Express) => {
       });
       res.json(result);
     } catch (error) {
-      console.error("Error listing directories:", error);
+      logger.error("Error listing directories:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -56,7 +65,7 @@ export const directoriesController = (expressServer: Express) => {
         if (error instanceof NotFoundError) {
           return res.status(404).json({ error: error.message });
         }
-        console.error("Error fetching directory:", error);
+        logger.error("Error fetching directory:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     },
@@ -73,7 +82,7 @@ export const directoriesController = (expressServer: Express) => {
         });
         res.json(result);
       } catch (error) {
-        console.error("Error fetching subdirectories:", error);
+        logger.error("Error fetching subdirectories:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     },
@@ -83,6 +92,19 @@ export const directoriesController = (expressServer: Express) => {
     "/api/directories/:id",
     authMiddleware,
     async (req, res) => {
+      if (!validateUserCanWrite((req as any).userRights)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      if (
+        req.body.privacy &&
+        !validateUserCanUploadPublicFiles((req as any).userRights)
+      ) {
+        return res
+          .status(403)
+          .json({ error: "Forbidden to set public privacy" });
+      }
+
       try {
         const result = await directoryService.update({
           ...req.body,
@@ -94,7 +116,7 @@ export const directoriesController = (expressServer: Express) => {
         if (error instanceof NotFoundError) {
           return res.status(404).json({ error: error.message });
         }
-        console.error("Error updating directory:", error);
+        logger.error("Error updating directory:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     },
@@ -104,6 +126,10 @@ export const directoriesController = (expressServer: Express) => {
     "/api/directories/:id",
     authMiddleware,
     async (req, res) => {
+      if (!validateUserCanWrite((req as any).userRights)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
       try {
         const result = await directoryService.delete({
           id: req.params.id,
@@ -115,7 +141,7 @@ export const directoriesController = (expressServer: Express) => {
         if (error instanceof NotFoundError) {
           return res.status(404).json({ error: error.message });
         }
-        console.error("Error deleting directory:", error);
+        logger.error("Error deleting directory:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     },

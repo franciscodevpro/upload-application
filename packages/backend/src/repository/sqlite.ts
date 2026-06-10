@@ -1,9 +1,10 @@
 import Database from "better-sqlite3";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
 import { files } from "../db/schemas/files";
 import { directories } from "../db/schemas/directories";
 import { users } from "../db/schemas/users";
+import { UserRightsEnum } from "../enums/user-rights-enum";
 
 var db:
   | (BetterSQLite3Database<Record<string, never>> & {
@@ -71,7 +72,8 @@ export const initializeDatabase = () => {
       refreshToken TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL,
-      status TEXT DEFAULT 'active'
+      status TEXT DEFAULT 'active',
+      access_rights TEXT DEFAULT '${UserRightsEnum.READ},${UserRightsEnum.WRITE}'
     )
     `,
   );
@@ -124,6 +126,7 @@ interface IUser {
   createdAt: string;
   updatedAt: string;
   status: string;
+  access_rights: string;
 }
 
 interface IUserNullable {
@@ -134,6 +137,7 @@ interface IUserNullable {
   createdAt: string | null;
   updatedAt: string | null;
   status: string | null;
+  access_rights: string | null;
 }
 
 export const fileRepository = {
@@ -179,7 +183,9 @@ export const fileRepository = {
         and(
           eq(files.status, "active"),
           parent ? eq(files.parent, parent) : isNull(files.parent),
-          userId ? eq(files.userId, userId) : isNull(files.userId),
+          userId
+            ? eq(files.userId, userId)
+            : or(isNull(files.userId), eq(files.privacy, "public")),
         ),
       );
   },
@@ -198,7 +204,9 @@ export const fileRepository = {
       .where(
         and(
           eq(files.id, id),
-          userId ? eq(files.userId, userId) : isNull(files.userId),
+          userId
+            ? eq(files.userId, userId)
+            : or(isNull(files.userId), eq(files.privacy, "public")),
         ),
       );
     return data.at(0);
@@ -214,7 +222,9 @@ export const fileRepository = {
       .where(
         and(
           eq(files.parent, parentId),
-          userId ? eq(files.userId, userId) : isNull(files.userId),
+          userId
+            ? eq(files.userId, userId)
+            : or(isNull(files.userId), eq(files.privacy, "public")),
         ),
       );
   },
@@ -290,7 +300,9 @@ export const directoryRepository = {
         and(
           eq(directories.status, "active"),
           parent ? eq(directories.parent, parent) : isNull(directories.parent),
-          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+          userId
+            ? eq(directories.userId, userId)
+            : or(isNull(directories.userId), eq(directories.privacy, "public")),
         ),
       );
   },
@@ -305,7 +317,9 @@ export const directoryRepository = {
       .where(
         and(
           eq(directories.id, id),
-          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+          userId
+            ? eq(directories.userId, userId)
+            : or(isNull(directories.userId), eq(directories.privacy, "public")),
         ),
       );
     return data.at(0);
@@ -321,7 +335,9 @@ export const directoryRepository = {
       .where(
         and(
           eq(directories.parent, parentId),
-          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+          userId
+            ? eq(directories.userId, userId)
+            : or(isNull(directories.userId), eq(directories.privacy, "public")),
         ),
       );
   },
@@ -370,18 +386,22 @@ export const userRepository = {
     password,
     createdAt,
     updatedAt,
-  }: Omit<IUser, "refreshToken" | "status"> & {
+  }: Omit<IUser, "refreshToken" | "status" | "access_rights"> & {
     refreshToken?: string | null;
+    access_rights?: string | null;
   }): Promise<any> {
-    return dbInstance().insert(users).values({
-      id,
-      email,
-      password,
-      refreshToken: null,
-      createdAt,
-      updatedAt,
-      status: "active",
-    });
+    return dbInstance()
+      .insert(users)
+      .values({
+        id,
+        email,
+        password,
+        refreshToken: null,
+        createdAt,
+        updatedAt,
+        status: "active",
+        access_rights: UserRightsEnum.READ + "," + UserRightsEnum.WRITE,
+      });
   },
 
   async findByEmail(email: string): Promise<IUserNullable | undefined> {

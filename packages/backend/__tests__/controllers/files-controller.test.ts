@@ -45,25 +45,14 @@ describe("Files Controller - HTTP Endpoints", () => {
 
   const testUserId = "user-123";
 
-  const initAppWithoutUserId = () => {
-    app = express();
-    app.use(express.json());
-
-    app.use((req, res, next) => {
-      (req as any).userId = undefined;
-      next();
-    });
-
-    filesController(app);
-  };
-
-  const initAppWithUserId = () => {
+  const initAppGeneric = (userId?: string, userRights?: string) => {
     app = express();
     app.use(express.json());
 
     // Mock do middleware de autenticação
     app.use((req, res, next) => {
-      (req as any).userId = testUserId;
+      (req as any).userId = userId;
+      (req as any).userRights = userRights;
       next();
     });
 
@@ -71,7 +60,7 @@ describe("Files Controller - HTTP Endpoints", () => {
   };
 
   beforeEach(() => {
-    initAppWithUserId();
+    initAppGeneric(testUserId, "read,write");
 
     // Limpar mocks
     jest.clearAllMocks();
@@ -102,7 +91,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar os arquivos sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       mockedFileRepository.list.mockResolvedValue([testFile]);
 
       const response = await request(app).get(
@@ -185,10 +174,12 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         1,
         "test-id",
+        testUserId,
       );
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         2,
         "test-id",
+        testUserId,
       );
       expect(mockedFileRepository.update).toHaveBeenCalledWith(
         "test-id",
@@ -202,8 +193,50 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response).toSatisfyApiSpec();
     });
 
+    it("deve atualizar um arquivo de privado para publico", async () => {
+      initAppGeneric(testUserId, "read,write,write-public");
+      mockedFileRepository.findById
+        .mockResolvedValueOnce(testFile)
+        .mockResolvedValueOnce({
+          ...testFile,
+          originalName: "Updated File Name",
+          parent: null,
+        });
+
+      const response = await request(app).put("/api/files/test-id").send({
+        originalName: "Updated File Name",
+        parent: testFile.parent,
+        privacy: "public",
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("id");
+      expect(response.body).toHaveProperty("originalName", "Updated File Name");
+      expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
+        1,
+        "test-id",
+        testUserId,
+      );
+      expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
+        2,
+        "test-id",
+        testUserId,
+      );
+      expect(mockedFileRepository.update).toHaveBeenCalledWith(
+        "test-id",
+        expect.anything(),
+        {
+          originalName: "Updated File Name" + "." + testFile.extension,
+          parent: testFile.parent,
+          privacy: "public",
+        },
+      );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
     it("deve atualizar um arquivo publico sem userId", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
 
       mockedFileRepository.findById.mockResolvedValue({
         ...testFile,
@@ -218,10 +251,12 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         1,
         "test-id",
+        undefined,
       );
       expect(mockedFileRepository.findById).toHaveBeenNthCalledWith(
         2,
         "test-id",
+        undefined,
       );
       expect(mockedFileRepository.update).toHaveBeenCalledWith(
         "test-id",
@@ -230,6 +265,35 @@ describe("Files Controller - HTTP Endpoints", () => {
           originalName: "Updated File Name",
         },
       );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 403 caso o usuário não tenha permissão de escrita publica", async () => {
+      mockedFileRepository.findById.mockResolvedValue(undefined);
+      const response = await request(app).put("/api/files/test-id").send({
+        originalName: "Updated File Name",
+        path: testFile.path,
+        privacy: "public",
+      });
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden to set public privacy");
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
+      initAppGeneric(testUserId, "read");
+      const response = await request(app).put("/api/files/test-id").send({
+        originalName: "Updated File Name",
+        path: testFile.path,
+      });
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden");
 
       expect(response).toSatisfyApiSpec();
     });
@@ -244,7 +308,10 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("File not found");
-      expect(mockedFileRepository.findById).toHaveBeenCalledWith("test-id");
+      expect(mockedFileRepository.findById).toHaveBeenCalledWith(
+        "test-id",
+        testUserId,
+      );
 
       expect(response).toSatisfyApiSpec();
     });
@@ -263,7 +330,10 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Internal server error");
-      expect(mockedFileRepository.findById).toHaveBeenCalledWith("test-id");
+      expect(mockedFileRepository.findById).toHaveBeenCalledWith(
+        "test-id",
+        testUserId,
+      );
 
       expect(response).toSatisfyApiSpec();
     });
@@ -294,6 +364,18 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response).toSatisfyApiSpec();
     });
 
+    it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
+      initAppGeneric(testUserId, "read");
+
+      const response = await request(app).delete("/api/files/invalid-id");
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Forbidden");
+
+      expect(response).toSatisfyApiSpec();
+    });
+
     it("deve retornar erro 404 se arquivo não existir", async () => {
       mockedFileRepository.findById.mockResolvedValue(undefined);
 
@@ -311,7 +393,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     });
 
     it("deve deletar um arquivo com sucesso sem usuário", async () => {
-      initAppWithoutUserId();
+      initAppGeneric(undefined, "read,write");
       mockedFileRepository.findById.mockResolvedValue(testFile);
       mockedFileRepository.delete.mockResolvedValue(undefined);
 

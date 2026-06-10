@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 export interface User {
   id: string;
   email: string;
+  access_rights: string;
   createdAt?: string;
 }
 
