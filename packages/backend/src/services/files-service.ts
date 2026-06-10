@@ -1,9 +1,12 @@
 import { NotFoundError } from "../errors/not-found-error";
 import { fileRepository as FileRepository } from "../repository/sqlite";
 import { deleteFileFromPath } from "../utils/delete-files-utils";
+import { logger as Logger } from "../utils/logger-utils";
 
 export class FilesService {
   constructor(private readonly fileRepository: typeof FileRepository) {}
+
+  logger: typeof Logger = Logger;
 
   async findAll(params: { parent?: string; userId?: string }) {
     const parent = params.parent || null; // Garantir que seja null se não fornecido
@@ -25,10 +28,9 @@ export class FilesService {
     userId?: string;
     privacy?: string;
   }): Promise<any> {
-    const { id } = params;
-    const { parent, originalName } = params;
+    const { id, userId, parent, originalName } = params;
 
-    const filedata = await this.fileRepository.findById(id);
+    const filedata = await this.fileRepository.findById(id, userId);
     if (!filedata) {
       throw new NotFoundError("File not found");
     }
@@ -45,7 +47,7 @@ export class FilesService {
     if (params.privacy !== undefined) updates.privacy = params.privacy;
 
     await this.fileRepository.update(id, params.userId || null, updates);
-    const updatedFile = await this.fileRepository.findById(id);
+    const updatedFile = await this.fileRepository.findById(id, userId);
     return updatedFile;
   }
 

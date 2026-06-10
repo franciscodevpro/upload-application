@@ -95,6 +95,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        access_rights: user.access_rights,
       },
     };
   }
@@ -160,6 +161,7 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
+      access_rights: user.access_rights,
       createdAt: user.createdAt,
     };
   }
