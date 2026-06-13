@@ -19,7 +19,7 @@ jest.mock("better-sqlite3");
 
 const drizzleMock = drizzle as jest.MockedFunction<typeof drizzle>;
 
-const drizzleReturnValue = {
+var drizzleReturnValue = {
   run: jest.fn(),
   prepare: jest.fn().mockReturnThis(),
   get: jest.fn(),
@@ -37,7 +37,16 @@ const drizzleReturnValue = {
 
 drizzleMock.mockImplementation(jest.fn().mockReturnValue(drizzleReturnValue));
 
+const resetDrizzleReturnValue = () => {
+  drizzleReturnValue.where.mockReset();
+  drizzleReturnValue.where.mockReturnValue([]);
+};
+
 describe("SQLite Repository", () => {
+  beforeEach(() => {
+    resetDrizzleReturnValue();
+  });
+
   describe("File Repository", () => {
     const mockFile = {
       id: "file-123",
@@ -56,6 +65,8 @@ describe("SQLite Repository", () => {
 
     describe("save", () => {
       it("deve salvar um arquivo com sucesso", async () => {
+        const returning = jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValueOnce({ returning });
         const result = await fileRepository.save({
           id: mockFile.id,
           originalName: mockFile.originalName,
@@ -73,6 +84,10 @@ describe("SQLite Repository", () => {
       });
 
       it("deve salvar arquivo sem userId", async () => {
+        const returning = jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValue({
+          returning: () => [{ parent: null }],
+        });
         const result = await fileRepository.save({
           id: "file-456",
           originalName: "image.jpg",
@@ -213,7 +228,8 @@ describe("SQLite Repository", () => {
 
     describe("update", () => {
       it("deve atualizar arquivo com sucesso", async () => {
-        drizzleReturnValue.where.mockReturnValueOnce([mockFile]);
+        const returning = () => jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValue({ returning, 0: mockFile });
         const result = await fileRepository.update("file-123", undefined, {
           newName: "document_updated.pdf",
           status: "inactive",
@@ -223,7 +239,8 @@ describe("SQLite Repository", () => {
       });
 
       it("deve atualizar apenas para o userId correto", async () => {
-        drizzleReturnValue.where.mockReturnValueOnce([mockFile]);
+        const returning = () => jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValue({ returning, 0: mockFile });
         const result = await fileRepository.update("file-123", "user-456", {
           privacy: "public",
         });
@@ -232,7 +249,8 @@ describe("SQLite Repository", () => {
       });
 
       it("deve atualizar múltiplos campos", async () => {
-        drizzleReturnValue.where.mockReturnValueOnce([mockFile]);
+        const returning = () => jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValue({ returning, 0: mockFile });
         const result = await fileRepository.update("file-123", "user-456", {
           originalName: "new_name.pdf",
           size: 6291456,
@@ -241,25 +259,95 @@ describe("SQLite Repository", () => {
 
         expect(result).toBeDefined();
       });
+
+      it("deve atualizar arquivo e adicionar o seu tamanho aos diretórios pais", async () => {
+        const returning = jest.fn();
+        returning.mockResolvedValueOnce([{ parent: "other-parent", size: 1 }]);
+        returning.mockResolvedValueOnce([
+          { parent: "more-one-parent", size: 1 },
+        ]);
+        returning.mockResolvedValueOnce([{ parent: null, size: null }]);
+        returning.mockResolvedValueOnce([{ parent: null, size: null }]);
+        drizzleReturnValue.where.mockReturnValueOnce([mockFile]);
+        drizzleReturnValue.where.mockReturnValue({ returning });
+        const result = await fileRepository.update("file-123", "any_user_id", {
+          newName: "document_updated.pdf",
+          status: "inactive",
+          parent: "some-parent",
+        });
+
+        expect(result).toBeDefined();
+      });
+
+      it("deve atualizar arquivo e adicionar o seu tamanho aos diretórios pais sem userId", async () => {
+        const returning = jest.fn();
+        returning.mockResolvedValueOnce([{ parent: "other-parent", size: 1 }]);
+        returning.mockResolvedValueOnce([
+          { parent: "more-one-parent", size: 1 },
+        ]);
+        returning.mockResolvedValueOnce([{ parent: null, size: null }]);
+        returning.mockResolvedValueOnce([{ parent: null, size: null }]);
+        drizzleReturnValue.where.mockReturnValueOnce([mockFile]);
+        drizzleReturnValue.where.mockReturnValue({ returning });
+        const result = await fileRepository.update("file-123", undefined, {
+          newName: "document_updated.pdf",
+          status: "inactive",
+          parent: "some-parent",
+        });
+
+        expect(result).toBeDefined();
+      });
+    });
+
+    describe("uploadedSize", () => {
+      it("deve retornar o tamanho total já armazenado por userId", async () => {
+        drizzleReturnValue.where.mockReturnValueOnce([{ totalSize: "1" }]);
+        const total = await fileRepository.uploadedSize("dir-parent-123");
+
+        expect(total).toBe(1);
+      });
+
+      it("deve retornar (0) zero quando nenhum total for encontrado", async () => {
+        drizzleReturnValue.where.mockReturnValueOnce([]);
+        const total = await fileRepository.uploadedSize("dir-parent-123");
+
+        expect(total).toBe(0);
+      });
     });
 
     describe("delete", () => {
       it("deve deletar arquivo com sucesso", async () => {
+        const returning = jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValueOnce({ returning });
         const result = await fileRepository.delete("file-123");
 
         expect(result).toBeDefined();
       });
 
       it("deve deletar arquivo apenas se userId corresponder", async () => {
+        const returning = () => jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValue({ returning, 0: mockFile });
         const result = await fileRepository.delete("file-123", "user-456");
 
         expect(result).toBeDefined();
       });
 
       it("deve falhar ao deletar com userId incorreto", async () => {
+        const returning = jest.fn().mockResolvedValue([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValueOnce({ returning });
         const result = await fileRepository.delete("file-123", "user-wrong");
 
         // Resultado deve retornar, mesmo que sem deletar nada
+        expect(result).toBeDefined();
+      });
+
+      it("deve deletar arquivo com sucesso e diminuir o tamanho do diretório pai", async () => {
+        const returning = jest.fn();
+        returning.mockResolvedValueOnce([mockFile]);
+        returning.mockResolvedValueOnce([{ parent: null }]);
+        drizzleReturnValue.where.mockReturnValue({ returning });
+        const result = await fileRepository.delete("file-123");
+
         expect(result).toBeDefined();
       });
     });
