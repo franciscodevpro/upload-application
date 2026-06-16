@@ -9,7 +9,7 @@ import { Response } from "express";
 export class DownloadFilesService {
   constructor(private readonly fileRepository: typeof FileRepository) {}
 
-  storagePath = path.resolve(__dirname, "files");
+  storagePath = path.resolve(__dirname, "..", "files");
 
   async get(files: string[], userId: string | undefined, res: Response) {
     if (!files || files.length === 0 || !files[0])

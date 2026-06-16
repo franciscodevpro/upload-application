@@ -106,6 +106,7 @@ export default function ListFiles() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [directoryDetails, setDirectoryDetails] = useState<DirectoryItemDetails | undefined>(undefined);
   const [directories, setDirectories] = useState<DirectoryItem[]>([]);
+  const [uploadLimit, setUploadLimit] = useState<{limit: number, total: number}>();
   const [selected, setSelected] = useState<string[]>([]);
   const [detailsItem, setDetailsItem] = useState<{ item: FileItem | DirectoryItem; type: 'file' | 'directory'; } | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -136,6 +137,17 @@ export default function ListFiles() {
       setDirectories(data);
     }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchUploadLimit = async (accessToken?: string): Promise<void> => {
+    const url = `${API_URL}/files/limit`;
+    const res = await fetch(url, {
+      headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {},
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setUploadLimit(data);
+    }
+  };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchFiles = async (directoryId?: string, accessToken?: string): Promise<void> => {
@@ -157,7 +169,8 @@ export default function ListFiles() {
       }
       fetchDirectories(directoryId, accessToken);
       fetchFiles(directoryId, accessToken);
-  }, [fetchDirectories, fetchDirectoryDetails, fetchFiles]);
+      fetchUploadLimit(accessToken);
+  }, [fetchDirectories, fetchDirectoryDetails, fetchFiles, fetchUploadLimit]);
 
   const createDirectory = (): void => {
     setIsPromptOpen(true);
@@ -259,8 +272,12 @@ export default function ListFiles() {
 
         <div className="flex justify-between flex-col md:flex-row items-center mb-8 gap-2">
           <div className="text-center md:text-left">
-            <h1 className="text-4xl font-display font-bold text-text-primary mb-2">Servidor de Arquivos</h1>
-            <p className="text-text-secondary text-base">Gerencie seus arquivos com facilidade.</p>
+            <h1 className="text-4xl font-display font-bold text-text-primary mb-2">Gerencie Arquivos</h1>
+            {uploadLimit?.total? <p className="text-text-secondary text-base">
+              <strong className="mr-2">{formatSize(uploadLimit?.total)}</strong>
+               utilizado de 
+              <strong className="ml-2">{formatSize(uploadLimit?.limit)}</strong>
+              </p> : ""}
           </div>
           
           <div className="flex items-center gap-2">
@@ -290,11 +307,22 @@ export default function ListFiles() {
         <div className="bg-background-secondary rounded-lg shadow-2xl overflow-hidden border border-border-primary">
           <header className="text-text-secondary text-sm p-1 border-b border-border-secondary fade-edges py-4 px-6">
             <div className="flex items-center">
-              <div className="w-80 px-1 box-border overflow-hidden font-bold font-sans">Nome</div>
-              <div className="w-20 px-1 box-border hidden md:block overflow-hidden font-bold text-center font-sans ">Tipo</div>
-              <div className="w-24 px-1 box-border hidden md:block overflow-hidden font-bold font-sans">Tamanho</div>
-              <div className="w-52 px-1 box-border hidden md:block overflow-hidden font-bold font-sans">Data de criação</div>
-              <div className="w-16 text-center px-1 box-border overflow-hidden font-bold font-sans">Ações</div>
+              <div className="w-80 px-1 box-border overflow-hidden font-bold font-sans">
+                (  {
+                  (files?.length | 0) +
+                  (directories?.length | 0)
+                }  ) Nome
+              </div>
+              <div className="w-28 px-1 box-border hidden md:block overflow-hidden font-bold text-center font-sans "></div>
+              <div className="w-32 px-1 box-border hidden md:flex items-center overflow-hidden font-bold font-sans">
+                <HardDrive size={14} className="mr-2 opacity-60" />
+                {formatSize(
+                  (files?.length? files.reduce((acum, cur) => acum += cur.size, 0) : 0) +
+                  (directories?.length? directories.reduce((acum, cur) => acum += cur.size, 0) : 0)
+                )}
+              </div>
+              <div className="w-52 px-1 box-border hidden md:block overflow-hidden font-bold font-sans"></div>
+              <div className="w-16 text-center px-1 box-border overflow-hidden font-bold font-sans"></div>
             </div>
           </header>
           <section className="relative fade-edges px-6">
@@ -306,7 +334,7 @@ export default function ListFiles() {
                     <span>{directory.name}</span>
                   </a>
                 </div>
-                <div className="w-20 px-1 box-border hidden md:flex overflow-hidden text-center">
+                <div className="w-28 px-1 box-border hidden md:flex overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
                     {getDirectoryType()}
                   </span>
@@ -364,7 +392,7 @@ export default function ListFiles() {
                     {file.name}
                   </label>
                 </div>
-                <div className="w-20 px-1 box-border hidden md:flex overflow-hidden text-center">
+                <div className="w-28 px-1 box-border hidden md:flex overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
                     {getFileType(file.name)}
                   </span>
@@ -427,7 +455,7 @@ export default function ListFiles() {
       </div>
 
       {user && user.access_rights.includes("write") &&
-        <UploadFile onUploadSuccess={() => fetchData(directoryId, authorizationToken || undefined)} parentId={directoryId} accessToken={authorizationToken || undefined} />
+        <UploadFile onUploadSuccess={() => fetchData(directoryId, authorizationToken || undefined)} parentId={directoryId} accessToken={authorizationToken || undefined} maxFileSize={uploadLimit?.limit? uploadLimit?.limit - uploadLimit?.total : 1} />
       }
 
       {isAuthOpen && (

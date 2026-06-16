@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNull, or, sql, sum } from "drizzle-orm";
 import { BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
 import { files } from "../db/schemas/files";
 import { directories } from "../db/schemas/directories";
@@ -153,7 +153,7 @@ export const fileRepository = {
     parent = null,
     userId = null,
   }: Omit<IFiles, "status" | "privacy">): Promise<any> {
-    return dbInstance().insert(files).values({
+    const result = await dbInstance().insert(files).values({
       id,
       originalName,
       newName,
@@ -167,6 +167,11 @@ export const fileRepository = {
       userId,
       privacy: "private",
     });
+
+    if (parent && size)
+      await directoryRepository.updateSizeByParent(parent, userId, size);
+
+    return result;
   },
 
   async list({
@@ -229,12 +234,36 @@ export const fileRepository = {
       );
   },
 
+  async uploadedSize(userId: string): Promise<number> {
+    const result = await dbInstance()
+      .select({
+        totalSize: sum(files.size),
+      })
+      .from(files)
+      .where(and(eq(files.userId, userId)));
+
+    return parseInt(result?.[0]?.totalSize || "0");
+  },
+
   async update(
     id: string,
     userId: string | null = null,
     updates: Partial<Omit<IFiles, "id">>,
   ): Promise<any> {
-    return dbInstance()
+    let oldFiledata;
+    if (updates?.parent) {
+      oldFiledata = await dbInstance()
+        .select()
+        .from(files)
+        .where(
+          and(
+            eq(files.id, id),
+            userId ? eq(files.userId, userId) : isNull(files.userId),
+          ),
+        );
+    }
+
+    const result = await dbInstance()
       .update(files)
       .set(updates)
       .where(
@@ -242,18 +271,45 @@ export const fileRepository = {
           eq(files.id, id),
           userId ? eq(files.userId, userId) : isNull(files.userId),
         ),
+      )
+      .returning();
+
+    if (oldFiledata?.[0]?.parent && oldFiledata?.[0]?.size)
+      await directoryRepository.updateSizeByParent(
+        oldFiledata[0].parent,
+        userId,
+        -oldFiledata[0].size,
       );
+
+    if (result?.[0]?.parent && result?.[0]?.size)
+      await directoryRepository.updateSizeByParent(
+        result[0].parent,
+        userId,
+        result[0].size,
+      );
+
+    return result;
   },
 
   async delete(id: string, userId: string | null = null): Promise<any> {
-    return dbInstance()
+    const result = await dbInstance()
       .delete(files)
       .where(
         and(
           eq(files.id, id),
           userId ? eq(files.userId, userId) : isNull(files.userId),
         ),
+      )
+      .returning();
+
+    if (result?.[0]?.parent && result[0].size)
+      await directoryRepository.updateSizeByParent(
+        result[0].parent,
+        userId,
+        result[0].size,
       );
+
+    return result;
   },
 
   async deleteByUserId(userId: string): Promise<any> {
@@ -376,6 +432,37 @@ export const directoryRepository = {
     return dbInstance()
       .delete(directories)
       .where(eq(directories.userId, userId));
+  },
+
+  async updateSizeByParent(
+    parent: string,
+    userId: string | null,
+    sizetoRemoveOrAdd: number, //amount to be subtracted (ex. -1024) ou added (ex. 1024)
+  ): Promise<void> {
+    const result = await dbInstance()
+      .update(directories)
+      .set({
+        size: sql`${directories.size} + ${sizetoRemoveOrAdd}`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(directories.id, parent),
+          userId ? eq(directories.userId, userId) : isNull(directories.userId),
+        ),
+      )
+      .returning();
+
+    const parentOfUpdated = result[0].parent;
+
+    if (parentOfUpdated)
+      return this.updateSizeByParent(
+        parentOfUpdated,
+        userId,
+        sizetoRemoveOrAdd,
+      );
+
+    return;
   },
 };
 
