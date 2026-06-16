@@ -31,6 +31,18 @@ export const filesController = (expressServer: Express) => {
     }
   });
 
+  expressServer.get("/api/files/limit", authMiddleware, async (req, res) => {
+    try {
+      const result = await filesService.findLimitAndSize({
+        userId: (req as any).userId,
+      });
+      res.json(result);
+    } catch (error) {
+      logger.error("Error finding limit size:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   expressServer.put("/api/files/:id", authMiddleware, async (req, res) => {
     if (!validateUserCanWrite((req as any).userRights)) {
       return res.status(403).json({ error: "Forbidden" });

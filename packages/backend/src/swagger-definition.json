@@ -41,6 +41,13 @@
           "status": { "type": "string" }
         }
       },
+      "UploadLimit": {
+        "type": "object",
+        "properties": {
+          "limit": { "type": "number" },
+          "total": { "type": "number" }
+        }
+      },
       "Directory": {
         "type": "object",
         "properties": {
@@ -178,6 +185,33 @@
                 "schema": {
                   "type": "array",
                   "items": { "$ref": "#/components/schemas/File" }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/limit": {
+      "get": {
+        "summary": "Retorna o limite de upload",
+        "tags": ["Files"],
+        "responses": {
+          "200": {
+            "description": "Retorna o limite de upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UploadLimit" }
                 }
               }
             }
