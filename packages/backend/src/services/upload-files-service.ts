@@ -44,6 +44,22 @@ export class UploadFilesService {
     };
 
     this.tusServer = new Server({
+      //maxSize: 1 * 1024 * 1024 /*Megabytes*/,
+      maxSize: async (req, res) => {
+        const maxUploadLimit = process.env?.UPLOAD_DEFAULT_LIMIT
+          ? Number(process.env.UPLOAD_DEFAULT_LIMIT)
+          : 500 * 1024 * 1024;
+
+        const userStoredSize = await fileRepository.uploadedSize(
+          (req as any).userId,
+        );
+
+        return userStoredSize
+          ? userStoredSize > maxUploadLimit
+            ? 1
+            : maxUploadLimit - userStoredSize
+          : maxUploadLimit;
+      },
       path: "/api/upload",
       namingFunction: (req, metadata) => {
         return randomUUID() + path.extname((metadata as any).filename);

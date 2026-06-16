@@ -9,6 +9,7 @@ import { fileRepository } from "../../src/repository/sqlite";
 import path from "path";
 import fs from "node:fs";
 import { uploadFilesController } from "../../src/controllers/upload-files-controller";
+import { UploadFilesService } from "../../src/services/upload-files-service";
 
 // Mock do banco de dados
 jest.mock("../../src/repository/sqlite");
@@ -21,15 +22,19 @@ jest.mock("@tus/server", () => ({
       namingFunction: (req: any, metadata: any) => string;
       datastore: any;
       onUploadFinish: (req: any, res: any, upload: any) => Promise<any>;
+      maxSize?: (req: any, res: any) => Promise<number>;
     };
+    maxSize?: (req: any, res: any) => Promise<number>;
 
     constructor(serverParams: {
       path: string;
       namingFunction: (req: any, metadata: any) => string;
       datastore: any;
       onUploadFinish: (req: any, res: any, upload: any) => Promise<any>;
+      maxSize?: (req: any, res: any) => Promise<number>;
     }) {
       this.spyedServerParams = serverParams;
+      this.maxSize = serverParams.maxSize;
     }
 
     handle(req: any, res: any) {
@@ -191,6 +196,151 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
       expect(response.status).toBe(403);
       expect(response.body).toHaveProperty("error");
       expect(response.body.error).toContain("Forbidden");
+    });
+  });
+
+  describe("maxSize calculation", () => {
+    let mockReq: any;
+    let mockRes: any;
+
+    beforeEach(() => {
+      mockReq = { userId: testUserId };
+      mockRes = {};
+      // Clear environment variable before each test
+      delete process.env.UPLOAD_DEFAULT_LIMIT;
+    });
+
+    afterEach(() => {
+      delete process.env.UPLOAD_DEFAULT_LIMIT;
+    });
+
+    it("deve retornar o limite máximo padrão quando não há UPLOAD_DEFAULT_LIMIT configurado", async () => {
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(null);
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      const defaultLimit = 500 * 1024 * 1024;
+      expect(result).toBe(defaultLimit);
+      expect(mockedFileRepository.uploadedSize).toHaveBeenCalledWith(
+        testUserId,
+      );
+    });
+
+    it("deve usar UPLOAD_DEFAULT_LIMIT quando configurado no ambiente", async () => {
+      const customLimit = 100 * 1024 * 1024;
+      process.env.UPLOAD_DEFAULT_LIMIT = customLimit.toString();
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(null);
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      expect(result).toBe(customLimit);
+    });
+
+    it("deve retornar espaço disponível quando usuário tem armazenamento utilizado", async () => {
+      const maxUploadLimit = 500 * 1024 * 1024;
+      const userStoredSize = 200 * 1024 * 1024;
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(
+        userStoredSize,
+      );
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      const expectedAvailable = maxUploadLimit - userStoredSize;
+      expect(result).toBe(expectedAvailable);
+    });
+
+    it("deve retornar 1 quando usuário ultrapassou o limite de armazenamento", async () => {
+      const maxUploadLimit = 500 * 1024 * 1024;
+      const userStoredSize = 600 * 1024 * 1024; // Acima do limite
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(
+        userStoredSize,
+      );
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      expect(result).toBe(1);
+    });
+
+    it("deve retornar 0 quando usuário atingiu exatamente o limite de armazenamento", async () => {
+      const maxUploadLimit = 500 * 1024 * 1024;
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(
+        maxUploadLimit,
+      );
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      expect(result).toBe(0);
+    });
+
+    it("deve calcular corretamente com limite customizado e armazenamento utilizado", async () => {
+      const customLimit = 1000 * 1024 * 1024;
+      const userStoredSize = 300 * 1024 * 1024;
+      process.env.UPLOAD_DEFAULT_LIMIT = customLimit.toString();
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(
+        userStoredSize,
+      );
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      const expectedAvailable = customLimit - userStoredSize;
+      expect(result).toBe(expectedAvailable);
+    });
+
+    it("deve retornar o limite máximo quando uploadedSize retorna zero", async () => {
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(0);
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      const result = await maxSizeFunction(mockReq, mockRes);
+
+      const defaultLimit = 500 * 1024 * 1024;
+      expect(result).toBe(defaultLimit);
+    });
+
+    it("deve chamar uploadedSize com o userId correto", async () => {
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(null);
+      const customUserId = "user-custom-456";
+      mockReq.userId = customUserId;
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      await maxSizeFunction(mockReq, mockRes);
+
+      expect(mockedFileRepository.uploadedSize).toHaveBeenCalledWith(
+        customUserId,
+      );
+    });
+
+    it("deve chamar uploadedSize com userId undefined quando não autenticado", async () => {
+      (mockedFileRepository.uploadedSize as jest.Mock).mockResolvedValue(null);
+      mockReq.userId = undefined;
+
+      const uploadService = new UploadFilesService(fileRepository);
+      const maxSizeFunction = uploadService.tusServer.maxSize;
+
+      await maxSizeFunction(mockReq, mockRes);
+
+      expect(mockedFileRepository.uploadedSize).toHaveBeenCalledWith(undefined);
     });
   });
 });

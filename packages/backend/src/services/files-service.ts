@@ -8,6 +8,17 @@ export class FilesService {
 
   logger: typeof Logger = Logger;
 
+  async findLimitAndSize(params: { userId: string }) {
+    const userUploadedSize = await this.fileRepository.uploadedSize(
+      params.userId,
+    );
+    const currentLimit = Number(process.env?.UPLOAD_DEFAULT_LIMIT) | 0;
+    return {
+      limit: currentLimit,
+      total: userUploadedSize,
+    };
+  }
+
   async findAll(params: { parent?: string; userId?: string }) {
     const parent = params.parent || null; // Garantir que seja null se não fornecido
     const result = await this.fileRepository.list({
