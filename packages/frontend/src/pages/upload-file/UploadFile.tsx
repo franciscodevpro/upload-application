@@ -7,7 +7,7 @@ import Tus from '@uppy/tus'; // Example uploader plugin
 import '@uppy/core/css/style.min.css';
 import '@uppy/dashboard/css/style.min.css';
 
-export default function UploadFile({ onUploadSuccess, parentId, accessToken }: { onUploadSuccess: () => void, parentId?: string | null, accessToken?: string | null }) {
+export default function UploadFile({ onUploadSuccess, parentId, accessToken, maxFileSize }: { onUploadSuccess: () => void, parentId?: string | null, accessToken?: string | null, maxFileSize: number | null}) {
   const meta = {} as Record<string, string>;
   if (parentId) {
     meta["parentId"] = parentId; // Adiciona o parentId aos metadados se for fornecido
@@ -17,7 +17,7 @@ export default function UploadFile({ onUploadSuccess, parentId, accessToken }: {
     autoProceed: false,
     meta,
     restrictions: {
-      maxFileSize: null, // Sem limite para arquivos grandes
+      maxFileSize, // Sem limite para arquivos grandes
     }
   })
   .use(Tus, {
