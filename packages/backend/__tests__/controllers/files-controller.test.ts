@@ -1,7 +1,8 @@
 /**
  * Testes de integração para endpoints de arquivos
- * - PUT /api/files
- * - GET /api/files/:id
+ * - GET /api/files
+ * - GET /api/files/limit
+ * - PUT /api/files/:id
  * - DELETE /api/files/:id
  */
 
@@ -429,6 +430,59 @@ describe("Files Controller - HTTP Endpoints", () => {
       expect(response.body.error).toContain("Internal server error");
       expect(mockedFileRepository.findById).toHaveBeenCalledWith(
         "file-123",
+        testUserId,
+      );
+
+      expect(response).toSatisfyApiSpec();
+    });
+  });
+
+  describe("GET /api/files/limit", () => {
+    const mockTotal = 1024;
+    const mockLimit = 2048;
+
+    it("deve retornar o limite e tamanho do armazenamento com sucesso", async () => {
+      mockedFileRepository.uploadedSize.mockResolvedValue(mockTotal);
+      process.env.UPLOAD_DEFAULT_LIMIT = mockLimit + "";
+
+      const response = await request(app).get("/api/files/limit");
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("total", mockTotal);
+      expect(response.body).toHaveProperty("limit", mockLimit);
+      expect(mockedFileRepository.uploadedSize).toHaveBeenCalledWith(
+        testUserId,
+      );
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar o limite e tamanho sem userId", async () => {
+      initAppGeneric(undefined, "read,write");
+      mockedFileRepository.uploadedSize.mockResolvedValue(mockTotal);
+      process.env.UPLOAD_DEFAULT_LIMIT = mockLimit + "";
+
+      const response = await request(app).get("/api/files/limit");
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("total", mockTotal);
+      expect(response.body).toHaveProperty("limit", mockLimit);
+      expect(mockedFileRepository.uploadedSize).toHaveBeenCalledWith(undefined);
+
+      expect(response).toSatisfyApiSpec();
+    });
+
+    it("deve retornar erro 500 se ocorrer um erro interno", async () => {
+      mockedFileRepository.uploadedSize.mockRejectedValue(
+        new Error("Internal server error"),
+      );
+
+      const response = await request(app).get("/api/files/limit");
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toContain("Internal server error");
+      expect(mockedFileRepository.uploadedSize).toHaveBeenCalledWith(
         testUserId,
       );
 
