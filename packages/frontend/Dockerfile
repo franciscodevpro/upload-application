@@ -8,9 +8,10 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm i
 
 # Copy source code
+COPY index.html ./
 COPY src ./src
 COPY public ./public
 COPY vite.config.ts ./
