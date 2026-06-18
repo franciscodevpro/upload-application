@@ -1,11 +1,11 @@
 # Estágio 1: Construção (Build)
-FROM node:20-slim AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 # Copia arquivos de dependências
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 
 # Instala todas as dependências (incluindo devDependencies para o build)
 RUN npm install
@@ -15,7 +15,7 @@ COPY ./src ./src
 RUN npm run build
 
 # Estágio 2: Produção (Run)
-FROM node:20-slim
+FROM node:22-alpine
 
 WORKDIR /app
 
