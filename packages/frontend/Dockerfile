@@ -20,7 +20,7 @@ COPY tailwind.config.js ./
 COPY eslint.config.js ./
 
 # Build the application
-RUN npm run build
+RUN VITE_BASE_PATH=/ npm run build
 
 # Stage 2: Runtime
 FROM nginx:alpine
@@ -30,6 +30,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
+
 
 # Expose port
 EXPOSE 80
