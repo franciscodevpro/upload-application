@@ -7,7 +7,7 @@ import ListFiles from './pages/list-files/ListFiles.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta?.env?.BASE_URL as string | "/"}>
       <Routes>
         <Route element={<App />}>
           <Route path="/" element={<ListFiles />} />
