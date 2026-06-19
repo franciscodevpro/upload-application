@@ -25,7 +25,8 @@
     "jsonwebtoken": "^9.0.3",
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.2",
@@ -40,7 +41,6 @@
     "@types/supertest": "^7.2.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
-    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.9",
     "jest": "^29.7.0",
     "jest-openapi": "^0.14.2",

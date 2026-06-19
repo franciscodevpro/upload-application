@@ -23,6 +23,7 @@ import ItemDetailsCard from '../../components/ItemDetailsCard';
 import AuthPage from '../auth/AuthPage';
 import UserMenu from '../../components/UserMenu';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { Link } from 'react-router';
 
 interface FileItem {
   id: string;
@@ -250,19 +251,19 @@ export default function ListFiles() {
           <nav className="flex flex-col md:flex-row-reverse items-center justify-between text-sm">
             <UserMenu goToAuth={() => { setIsAuthOpen(true); }} onLogoutSuccess={() => { window.location.href = '/'; }} />
             <div className="flex flex-1 w-full overflow-x-hidden items-center gap-2">
-              <a href="/" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
+              <Link to="/" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
                 Home
-              </a>
+              </Link>
               {directoryDetails && directoryDetails.address.length > 0 && (directoryDetails.address.length > 2 ? [{id: '...', name: '...'},directoryDetails.address[directoryDetails.address.length-2], directoryDetails.address[directoryDetails.address.length-1]] : directoryDetails.address).map((dir) => (
                 (dir.id === '...')? <span key="ellipsis" className="flex items-center space-x-2"><span className="text-text-muted">/</span> <span className='text-[2rem] leading-6 mb-4'>...</span></span> : (
                 <span key={dir.id} className="flex items-center space-x-2 max-w-[40%] truncate">
                   <span className="text-text-muted">/</span>
-                  <a 
-                    href={`/?directoryId=${dir.id}`}
+                  <Link 
+                    to={`/?directoryId=${dir.id}`}
                     className="text-primary-400 hover:text-primary-300 transition-colors font-medium"
                   >
                     {dir.name}
-                  </a>
+                  </Link>
                 </span>
                 )
               ))}
@@ -330,9 +331,9 @@ export default function ListFiles() {
               <article key={directory.name} className="p-1 hover:bg-background-accent transition-all duration-200 group flex items-center py-3 border-b border-border-secondary hover:shadow-inner-glow">
                 <div className="w-80 flex items-center px-1 box-border overflow-hidden">
                   {getDirectoryIcon()}
-                  <a href={`/?directoryId=${directory.id}`} className="text-text-primary font-medium truncate cursor-pointer hover:text-primary-400 transition-colors font-sans" title={directory.name}>
+                  <Link to={`/?directoryId=${directory.id}`} className="text-text-primary font-medium truncate cursor-pointer hover:text-primary-400 transition-colors font-sans" title={directory.name}>
                     <span>{directory.name}</span>
-                  </a>
+                  </Link>
                 </div>
                 <div className="w-28 px-1 box-border hidden md:flex overflow-hidden text-center">
                   <span className="inline-flex py-1 px-3 rounded-full text-xs font-medium bg-background-tertiary text-text-secondary font-sans">
