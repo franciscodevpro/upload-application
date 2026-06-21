@@ -1,6 +1,6 @@
 /**
  * Testes de integração para endpoints de arquivos
- * - GET /api/download
+ * - GET /v1/download
  */
 
 import request from "supertest";
@@ -113,14 +113,14 @@ describe("Files Controller - HTTP Endpoints", () => {
     jest.clearAllMocks();
   });
 
-  describe("GET /api/download", () => {
+  describe("GET /v1/download", () => {
     it("deve baixar um arquivo com sucesso", async () => {
       mockedFileRepository.findById.mockResolvedValue(testFile);
       mockedPath.join.mockReturnValue("any_filePath");
       initAMockedApp();
 
       const response = await request(app).get(
-        `/api/download?files=${testFile.id}`,
+        `/v1/download?files=${testFile.id}`,
       );
 
       expect(response.status).toBe(200);
@@ -136,7 +136,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se nenhum arquivo for informado", async () => {
-      const response = await request(app).get("/api/download");
+      const response = await request(app).get("/v1/download");
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty("error");
@@ -146,7 +146,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     it("deve retornar erro 404 se arquivo não existir", async () => {
       mockedFileRepository.findById.mockResolvedValue(undefined);
 
-      const response = await request(app).get("/api/download?files=invalid-id");
+      const response = await request(app).get("/v1/download?files=invalid-id");
 
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
@@ -166,7 +166,7 @@ describe("Files Controller - HTTP Endpoints", () => {
       initAMockedApp();
 
       const response = await request(app).get(
-        `/api/download?files=${testFile.id}&files=other-fileId`,
+        `/v1/download?files=${testFile.id}&files=other-fileId`,
       );
 
       expect(response.status).toBe(200);

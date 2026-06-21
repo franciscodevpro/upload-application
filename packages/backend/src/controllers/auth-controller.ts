@@ -23,7 +23,7 @@ export const authController = (expressServer: Express) => {
   const logger: typeof Logger = Logger;
 
   // 1. Register
-  expressServer.post("/api/auth/register", async (req, res) => {
+  expressServer.post("/v1/auth/register", async (req, res) => {
     try {
       const recaptchaValid = await verifyRecaptcha(
         req.body.recaptchaToken,
@@ -57,7 +57,7 @@ export const authController = (expressServer: Express) => {
   });
 
   // 2. Login
-  expressServer.post("/api/auth/login", async (req, res) => {
+  expressServer.post("/v1/auth/login", async (req, res) => {
     try {
       const recaptchaValid = await verifyRecaptcha(
         req.body.recaptchaToken,
@@ -86,7 +86,7 @@ export const authController = (expressServer: Express) => {
   });
 
   // 3. Refresh Token
-  expressServer.post("/api/auth/refresh", async (req, res) => {
+  expressServer.post("/v1/auth/refresh", async (req, res) => {
     try {
       const { refreshToken } = req.body;
 
@@ -106,7 +106,7 @@ export const authController = (expressServer: Express) => {
   });
 
   // 4. Logout
-  expressServer.post("/api/auth/logout", authMiddleware, async (req, res) => {
+  expressServer.post("/v1/auth/logout", authMiddleware, async (req, res) => {
     try {
       const userId = (req as any).userId;
 
@@ -119,7 +119,7 @@ export const authController = (expressServer: Express) => {
   });
 
   // 5. Get Current User (exemplo de endpoint protegido)
-  expressServer.get("/api/auth/me", authMiddleware, async (req, res) => {
+  expressServer.get("/v1/auth/me", authMiddleware, async (req, res) => {
     try {
       const userId = (req as any).userId;
 
@@ -139,7 +139,7 @@ export const authController = (expressServer: Express) => {
   });
 
   expressServer.delete(
-    "/api/auth/delete-account",
+    "/v1/auth/delete-account",
     authMiddleware,
     async (req, res) => {
       try {

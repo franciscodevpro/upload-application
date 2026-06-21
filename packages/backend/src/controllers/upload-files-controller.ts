@@ -5,7 +5,7 @@ import { UploadFilesService } from "../services/upload-files-service";
 import { validateUserCanWrite } from "../utils/user-rights-validator";
 
 export const uploadFilesController = (expressServer: Express) => {
-  expressServer.all("/api/upload/*", authMiddleware, (req, res) => {
+  expressServer.all("/v1/upload/*", authMiddleware, (req, res) => {
     const accessRights = (req as any).userRights || null;
 
     if (!validateUserCanWrite(accessRights)) {

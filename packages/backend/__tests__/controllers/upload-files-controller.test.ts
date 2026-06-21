@@ -1,6 +1,6 @@
 /**
  * Testes de integração para endpoints de arquivos
- * - GET /api/download
+ * - GET /v1/download
  */
 
 import request from "supertest";
@@ -112,13 +112,13 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
     jest.clearAllMocks();
   });
 
-  describe("POST /api/upload/file", () => {
+  describe("POST /v1/upload/file", () => {
     it("deve realizar o upload de um arquivo com sucesso", async () => {
       mockedFileRepository.save.mockResolvedValue(testFile);
       mockedPath.join.mockReturnValue("any_filePath");
       mockedFs.existsSync.mockReturnValue(true);
 
-      const response = await request(app).post(`/api/upload/file`);
+      const response = await request(app).post(`/v1/upload/file`);
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain("Mocked server success response");
@@ -131,7 +131,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
           size: 1,
           type: "any_filetype",
           uploadAt: expect.anything(),
-          path: "/api/upload",
+          path: "/v1/upload",
           parent: "any_parentId",
           userId: testUserId,
         }),
@@ -143,7 +143,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
       mockedPath.join.mockReturnValue("any_filePath");
       mockedFs.existsSync.mockReturnValue(true);
 
-      const response = await request(app).post(`/api/upload/file`);
+      const response = await request(app).post(`/v1/upload/file`);
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain("Mocked server success response");
@@ -156,7 +156,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
           size: 1,
           type: "any_filetype",
           uploadAt: expect.anything(),
-          path: "/api/upload",
+          path: "/v1/upload",
           parent: "any_parentId",
           userId: testUserId,
         }),
@@ -169,7 +169,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
       mockedFs.existsSync.mockReturnValue(true);
       initAppGeneric(undefined, "read,write");
 
-      const response = await request(app).post(`/api/upload/file`);
+      const response = await request(app).post(`/v1/upload/file`);
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain("Mocked server success response");
@@ -182,7 +182,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
           size: 1,
           type: "any_filetype",
           uploadAt: expect.anything(),
-          path: "/api/upload",
+          path: "/v1/upload",
           parent: null,
           userId: null,
         }),
@@ -191,7 +191,7 @@ describe("Upload Files Controller - HTTP Endpoints", () => {
 
     it("deve retornar 403 caso o usuário não tenha permissão para fazer upload", async () => {
       initAppGeneric(testUserId, undefined as any);
-      const response = await request(app).post(`/api/upload/file`);
+      const response = await request(app).post(`/v1/upload/file`);
 
       expect(response.status).toBe(403);
       expect(response.body).toHaveProperty("error");

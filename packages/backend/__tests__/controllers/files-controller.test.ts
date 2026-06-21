@@ -1,9 +1,9 @@
 /**
  * Testes de integração para endpoints de arquivos
- * - GET /api/files
- * - GET /api/files/limit
- * - PUT /api/files/:id
- * - DELETE /api/files/:id
+ * - GET /v1/files
+ * - GET /v1/files/limit
+ * - PUT /v1/files/:id
+ * - DELETE /v1/files/:id
  */
 
 import request from "supertest";
@@ -67,12 +67,12 @@ describe("Files Controller - HTTP Endpoints", () => {
     jest.clearAllMocks();
   });
 
-  describe("GET /api/files", () => {
+  describe("GET /v1/files", () => {
     it("deve retornar a lista de arquivos", async () => {
       mockedFileRepository.list.mockResolvedValue([testFile]);
 
       const response = await request(app).get(
-        "/api/files?parent=parent-dir-123",
+        "/v1/files?parent=parent-dir-123",
       );
 
       expect(response.status).toBe(200);
@@ -96,7 +96,7 @@ describe("Files Controller - HTTP Endpoints", () => {
       mockedFileRepository.list.mockResolvedValue([testFile]);
 
       const response = await request(app).get(
-        "/api/files?parent=parent-dir-123",
+        "/v1/files?parent=parent-dir-123",
       );
 
       expect(response.status).toBe(200);
@@ -118,7 +118,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     it("deve retornar um array vazio se não houver arquivos", async () => {
       mockedFileRepository.list.mockResolvedValue([]);
 
-      const response = await request(app).get("/api/files?parent=test-parent");
+      const response = await request(app).get("/v1/files?parent=test-parent");
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -138,7 +138,7 @@ describe("Files Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).get("/api/files");
+      const response = await request(app).get("/v1/files");
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
@@ -154,7 +154,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("PUT /api/files", () => {
+  describe("PUT /v1/files", () => {
     it("deve atualizar um arquivo com nome válido", async () => {
       mockedFileRepository.findById
         .mockResolvedValueOnce(testFile)
@@ -164,7 +164,7 @@ describe("Files Controller - HTTP Endpoints", () => {
           parent: null,
         });
 
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalName: "Updated File Name",
         parent: testFile.parent,
       });
@@ -204,7 +204,7 @@ describe("Files Controller - HTTP Endpoints", () => {
           parent: null,
         });
 
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalName: "Updated File Name",
         parent: testFile.parent,
         privacy: "public",
@@ -244,7 +244,7 @@ describe("Files Controller - HTTP Endpoints", () => {
         extension: null,
       });
 
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalName: "Updated File Name",
       });
 
@@ -272,7 +272,7 @@ describe("Files Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 403 caso o usuário não tenha permissão de escrita publica", async () => {
       mockedFileRepository.findById.mockResolvedValue(undefined);
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalName: "Updated File Name",
         path: testFile.path,
         privacy: "public",
@@ -287,7 +287,7 @@ describe("Files Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
       initAppGeneric(testUserId, "read");
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalName: "Updated File Name",
         path: testFile.path,
       });
@@ -301,7 +301,7 @@ describe("Files Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 404 caso o arquivo não exista", async () => {
       mockedFileRepository.findById.mockResolvedValue(undefined);
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalName: "Updated File Name",
         path: testFile.path,
       });
@@ -323,7 +323,7 @@ describe("Files Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).put("/api/files/test-id").send({
+      const response = await request(app).put("/v1/files/test-id").send({
         originalname: "Updated File Name",
         path: testFile.path,
       });
@@ -340,12 +340,12 @@ describe("Files Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("DELETE /api/files/:id", () => {
+  describe("DELETE /v1/files/:id", () => {
     it("deve deletar um arquivo com sucesso", async () => {
       mockedFileRepository.findById.mockResolvedValue(testFile);
       mockedFileRepository.delete.mockResolvedValue(undefined);
 
-      const response = await request(app).delete(`/api/files/${testFile.id}`);
+      const response = await request(app).delete(`/v1/files/${testFile.id}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty(
@@ -368,7 +368,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
       initAppGeneric(testUserId, "read");
 
-      const response = await request(app).delete("/api/files/invalid-id");
+      const response = await request(app).delete("/v1/files/invalid-id");
 
       expect(response.status).toBe(403);
       expect(response.body).toHaveProperty("error");
@@ -380,7 +380,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     it("deve retornar erro 404 se arquivo não existir", async () => {
       mockedFileRepository.findById.mockResolvedValue(undefined);
 
-      const response = await request(app).delete("/api/files/invalid-id");
+      const response = await request(app).delete("/v1/files/invalid-id");
 
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
@@ -398,7 +398,7 @@ describe("Files Controller - HTTP Endpoints", () => {
       mockedFileRepository.findById.mockResolvedValue(testFile);
       mockedFileRepository.delete.mockResolvedValue(undefined);
 
-      const response = await request(app).delete(`/api/files/${testFile.id}`);
+      const response = await request(app).delete(`/v1/files/${testFile.id}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty(
@@ -423,7 +423,7 @@ describe("Files Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).delete("/api/files/file-123");
+      const response = await request(app).delete("/v1/files/file-123");
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
@@ -437,7 +437,7 @@ describe("Files Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("GET /api/files/limit", () => {
+  describe("GET /v1/files/limit", () => {
     const mockTotal = 1024;
     const mockLimit = 2048;
 
@@ -445,7 +445,7 @@ describe("Files Controller - HTTP Endpoints", () => {
       mockedFileRepository.uploadedSize.mockResolvedValue(mockTotal);
       process.env.UPLOAD_DEFAULT_LIMIT = mockLimit + "";
 
-      const response = await request(app).get("/api/files/limit");
+      const response = await request(app).get("/v1/files/limit");
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty("total", mockTotal);
@@ -462,7 +462,7 @@ describe("Files Controller - HTTP Endpoints", () => {
       mockedFileRepository.uploadedSize.mockResolvedValue(mockTotal);
       process.env.UPLOAD_DEFAULT_LIMIT = mockLimit + "";
 
-      const response = await request(app).get("/api/files/limit");
+      const response = await request(app).get("/v1/files/limit");
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty("total", mockTotal);
@@ -477,7 +477,7 @@ describe("Files Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).get("/api/files/limit");
+      const response = await request(app).get("/v1/files/limit");
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");

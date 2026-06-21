@@ -40,7 +40,7 @@ describe("Verify Recaptcha Utilitary", () => {
     it("should call fetch correctly and return true in case of success response", async () => {
       process.env.GOOGLE_RECAPTCHA_SECRET_KEY = "test-secret";
       process.env.GOOGLE_RECAPTCHA_VERIFY_URL =
-        "https://www.google.com/recaptcha/api/siteverify";
+        "https://www.google.com/recaptcha/v1/siteverify";
 
       global.fetch = jest.fn().mockResolvedValueOnce({
         ok: true,
@@ -65,7 +65,7 @@ describe("Verify Recaptcha Utilitary", () => {
     it("should return false case response be not success", async () => {
       process.env.GOOGLE_RECAPTCHA_SECRET_KEY = "test-secret";
       process.env.GOOGLE_RECAPTCHA_VERIFY_URL =
-        "https://www.google.com/recaptcha/api/siteverify";
+        "https://www.google.com/recaptcha/v1/siteverify";
 
       const mockLogger = {
         warn: jest.fn(),

@@ -12,7 +12,7 @@ import { logger } from "../utils/logger-utils";
 export const filesController = (expressServer: Express) => {
   const filesService = new FilesService(fileRepository);
 
-  expressServer.get("/api/files", authMiddleware, async (req, res) => {
+  expressServer.get("/v1/files", authMiddleware, async (req, res) => {
     try {
       const result = await filesService.findAll({
         parent: req.query.parent as string,
@@ -31,7 +31,7 @@ export const filesController = (expressServer: Express) => {
     }
   });
 
-  expressServer.get("/api/files/limit", authMiddleware, async (req, res) => {
+  expressServer.get("/v1/files/limit", authMiddleware, async (req, res) => {
     try {
       const result = await filesService.findLimitAndSize({
         userId: (req as any).userId,
@@ -43,7 +43,7 @@ export const filesController = (expressServer: Express) => {
     }
   });
 
-  expressServer.put("/api/files/:id", authMiddleware, async (req, res) => {
+  expressServer.put("/v1/files/:id", authMiddleware, async (req, res) => {
     if (!validateUserCanWrite((req as any).userRights)) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -78,7 +78,7 @@ export const filesController = (expressServer: Express) => {
     }
   });
 
-  expressServer.delete("/api/files/:id", authMiddleware, async (req, res) => {
+  expressServer.delete("/v1/files/:id", authMiddleware, async (req, res) => {
     if (!validateUserCanWrite((req as any).userRights)) {
       return res.status(403).json({ error: "Forbidden" });
     }
