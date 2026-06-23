@@ -60,7 +60,7 @@ export class UploadFilesService {
             : maxUploadLimit - userStoredSize
           : maxUploadLimit;
       },
-      path: "/api/upload",
+      path: "/v1/upload",
       namingFunction: (req, metadata) => {
         return randomUUID() + path.extname((metadata as any).filename);
       },

@@ -8,7 +8,7 @@ import { BadRequestError } from "../errors/bad-request-error";
 export const downloadFilesController = (expressServer: Express) => {
   const downloadFilesService = new DownloadFilesService(fileRepository);
 
-  expressServer.get("/api/download", authMiddleware, async (req, res) => {
+  expressServer.get("/v1/download", authMiddleware, async (req, res) => {
     const filenames = req.query.files as string | string[];
     const files = Array.isArray(filenames) ? filenames : [filenames];
 

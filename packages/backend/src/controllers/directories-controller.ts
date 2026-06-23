@@ -16,7 +16,7 @@ export const directoriesController = (expressServer: Express) => {
     fileRepository,
   );
 
-  expressServer.post("/api/directories", authMiddleware, async (req, res) => {
+  expressServer.post("/v1/directories", authMiddleware, async (req, res) => {
     if (!validateUserCanWrite((req as any).userRights)) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -37,7 +37,7 @@ export const directoriesController = (expressServer: Express) => {
     }
   });
 
-  expressServer.get("/api/directories", authMiddleware, async (req, res) => {
+  expressServer.get("/v1/directories", authMiddleware, async (req, res) => {
     try {
       const result = await directoryService.getAll({
         parent: req.query.parent as any,
@@ -50,29 +50,25 @@ export const directoriesController = (expressServer: Express) => {
     }
   });
 
-  expressServer.get(
-    "/api/directories/:id",
-    authMiddleware,
-    async (req, res) => {
-      try {
-        const result = await directoryService.getOne({
-          id: req.params.id,
-          userId: (req as any).userId,
-        });
+  expressServer.get("/v1/directories/:id", authMiddleware, async (req, res) => {
+    try {
+      const result = await directoryService.getOne({
+        id: req.params.id,
+        userId: (req as any).userId,
+      });
 
-        res.json(result);
-      } catch (error) {
-        if (error instanceof NotFoundError) {
-          return res.status(404).json({ error: error.message });
-        }
-        logger.error("Error fetching directory:", error);
-        res.status(500).json({ error: "Internal server error" });
+      res.json(result);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
       }
-    },
-  );
+      logger.error("Error fetching directory:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   expressServer.get(
-    "/api/directories/:parentId/subdirectories",
+    "/v1/directories/:parentId/subdirectories",
     authMiddleware,
     async (req, res) => {
       try {
@@ -88,42 +84,36 @@ export const directoriesController = (expressServer: Express) => {
     },
   );
 
-  expressServer.put(
-    "/api/directories/:id",
-    authMiddleware,
-    async (req, res) => {
-      if (!validateUserCanWrite((req as any).userRights)) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
+  expressServer.put("/v1/directories/:id", authMiddleware, async (req, res) => {
+    if (!validateUserCanWrite((req as any).userRights)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
-      if (
-        req.body.privacy &&
-        !validateUserCanUploadPublicFiles((req as any).userRights)
-      ) {
-        return res
-          .status(403)
-          .json({ error: "Forbidden to set public privacy" });
-      }
+    if (
+      req.body.privacy &&
+      !validateUserCanUploadPublicFiles((req as any).userRights)
+    ) {
+      return res.status(403).json({ error: "Forbidden to set public privacy" });
+    }
 
-      try {
-        const result = await directoryService.update({
-          ...req.body,
-          id: req.params.id,
-          userId: (req as any).userId,
-        });
-        res.json(result);
-      } catch (error) {
-        if (error instanceof NotFoundError) {
-          return res.status(404).json({ error: error.message });
-        }
-        logger.error("Error updating directory:", error);
-        res.status(500).json({ error: "Internal server error" });
+    try {
+      const result = await directoryService.update({
+        ...req.body,
+        id: req.params.id,
+        userId: (req as any).userId,
+      });
+      res.json(result);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
       }
-    },
-  );
+      logger.error("Error updating directory:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   expressServer.delete(
-    "/api/directories/:id",
+    "/v1/directories/:id",
     authMiddleware,
     async (req, res) => {
       if (!validateUserCanWrite((req as any).userRights)) {

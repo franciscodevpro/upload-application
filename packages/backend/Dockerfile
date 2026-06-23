@@ -25,6 +25,7 @@ RUN npm install --only=production
 
 # Copia apenas o código transpilado do estágio anterior
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/swagger-definition.json ./dist/
 
 # Cria o diretório onde os arquivos grandes serão armazenados
 # No Linux, o volume deve ser mapeado para cá

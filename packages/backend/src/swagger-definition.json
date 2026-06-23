@@ -5,12 +5,6 @@
     "version": "1.0.0",
     "description": "Documentacao da API para upload, listagem e gerenciamento de arquivos e diretorios."
   },
-  "servers": [
-    {
-      "url": "http://127.0.0.1:1080",
-      "description": "Servidor local"
-    }
-  ],
   "components": {
     "schemas": {
       "SuccessDeletionResponse": {
@@ -173,7 +167,7 @@
     }
   },
   "paths": {
-    "/api/files": {
+    "/v1/files": {
       "get": {
         "summary": "Lista os arquivos",
         "tags": ["Files"],
@@ -200,7 +194,7 @@
         }
       }
     },
-    "/api/files/limit": {
+    "/v1/files/limit": {
       "get": {
         "summary": "Retorna o limite de upload",
         "tags": ["Files"],
@@ -227,7 +221,7 @@
         }
       }
     },
-    "/api/files/{id}": {
+    "/v1/files/{id}": {
       "put": {
         "summary": "Atualiza um arquivo",
         "tags": ["Files"],
@@ -331,7 +325,7 @@
         }
       }
     },
-    "/api/download": {
+    "/v1/download": {
       "get": {
         "summary": "Baixa um ou varios arquivos",
         "tags": ["Download"],
@@ -388,7 +382,7 @@
         }
       }
     },
-    "/api/directories": {
+    "/v1/directories": {
       "post": {
         "summary": "Cria um diretorio",
         "tags": ["Directories"],
@@ -472,7 +466,7 @@
         }
       }
     },
-    "/api/directories/{id}": {
+    "/v1/directories/{id}": {
       "get": {
         "summary": "Busca diretorio por ID",
         "tags": ["Directories"],
@@ -618,7 +612,7 @@
         }
       }
     },
-    "/api/directories/{parentId}/subdirectories": {
+    "/v1/directories/{parentId}/subdirectories": {
       "get": {
         "summary": "Lista subdiretorios por parentId",
         "tags": ["Directories"],
@@ -653,7 +647,7 @@
         }
       }
     },
-    "/api/auth/register": {
+    "/v1/auth/register": {
       "post": {
         "summary": "Registra um novo usuário",
         "tags": ["Authentication"],
@@ -701,7 +695,7 @@
         }
       }
     },
-    "/api/auth/login": {
+    "/v1/auth/login": {
       "post": {
         "summary": "Realiza login do usuário",
         "tags": ["Authentication"],
@@ -749,7 +743,7 @@
         }
       }
     },
-    "/api/auth/refresh": {
+    "/v1/auth/refresh": {
       "post": {
         "summary": "Atualiza o token de acesso",
         "tags": ["Authentication"],
@@ -799,7 +793,7 @@
         }
       }
     },
-    "/api/auth/logout": {
+    "/v1/auth/logout": {
       "post": {
         "summary": "Realiza logout do usuário",
         "tags": ["Authentication"],
@@ -838,7 +832,7 @@
         }
       }
     },
-    "/api/auth/me": {
+    "/v1/auth/me": {
       "get": {
         "summary": "Retorna os dados do usuário autenticado",
         "tags": ["Authentication"],
@@ -883,7 +877,7 @@
         }
       }
     },
-    "/api/auth/delete-account": {
+    "/v1/auth/delete-account": {
       "delete": {
         "summary": "Deleta a conta do usuário autenticado",
         "tags": ["Authentication"],

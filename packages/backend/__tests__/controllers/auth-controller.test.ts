@@ -1,10 +1,10 @@
 /**
  * Testes de integração para endpoints de autenticação
- * - POST /api/auth/register
- * - POST /api/auth/login
- * - POST /api/auth/refresh
- * - POST /api/auth/logout
- * - GET /api/auth/me
+ * - POST /v1/auth/register
+ * - POST /v1/auth/login
+ * - POST /v1/auth/refresh
+ * - POST /v1/auth/logout
+ * - GET /v1/auth/me
  */
 
 import request from "supertest";
@@ -88,7 +88,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     jest.clearAllMocks();
   });
 
-  describe("POST /api/auth/register", () => {
+  describe("POST /v1/auth/register", () => {
     it("deve registrar um novo usuário com email e senha válidos", async () => {
       mockedUserRepository.findByEmail.mockResolvedValue(undefined);
       mockedUserRepository.create.mockResolvedValue({ id: testUser.id });
@@ -96,7 +96,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         Promise.resolve("hashed_password") as any,
       );
 
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -119,7 +119,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 400 se der erro ao validar o captcha", async () => {
       mockedVerifyRecaptchaUtils.verifyRecaptcha.mockResolvedValue(false);
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -132,7 +132,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se email estiver vazio", async () => {
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: "",
         password: testUser.password,
       });
@@ -144,7 +144,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se senha estiver vazia", async () => {
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: testUser.email,
         password: "",
       });
@@ -156,7 +156,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se senha for muito curta", async () => {
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: testUser.email,
         password: "12345", // Menos de 6 caracteres
       });
@@ -177,7 +177,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         access_rights: "read,write",
       });
 
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -193,7 +193,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         throw new Error();
       });
 
-      const response = await request(app).post("/api/auth/register").send({
+      const response = await request(app).post("/v1/auth/register").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -208,7 +208,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("POST /api/auth/login", () => {
+  describe("POST /v1/auth/login", () => {
     it("deve fazer login com credenciais válidas", async () => {
       const hashedPassword = "$2a$10$abcdefghijklmnopqrstuvwxyz"; // Senha hash fake
       mockedBcryptjs.compare.mockImplementation(() => {
@@ -229,7 +229,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         access_rights: "read,write",
       });
 
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -265,7 +265,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         access_rights: "read,write",
       });
 
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -279,7 +279,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 400 se der erro ao validar o captcha", async () => {
       mockedVerifyRecaptchaUtils.verifyRecaptcha.mockResolvedValue(false);
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: "",
         password: testUser.password,
       });
@@ -292,7 +292,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se email estiver vazio", async () => {
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: "",
         password: testUser.password,
       });
@@ -303,7 +303,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se senha estiver vazia", async () => {
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: testUser.email,
         password: "",
       });
@@ -316,7 +316,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     it("deve retornar erro 404 se usuário não existir", async () => {
       mockedUserRepository.findByEmail.mockResolvedValue(undefined);
 
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: "naoexiste@example.com",
         password: testUser.password,
       });
@@ -332,7 +332,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         throw new Error();
       });
 
-      const response = await request(app).post("/api/auth/login").send({
+      const response = await request(app).post("/v1/auth/login").send({
         email: testUser.email,
         password: testUser.password,
       });
@@ -347,7 +347,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("POST /api/auth/refresh", () => {
+  describe("POST /v1/auth/refresh", () => {
     it("deve realizar o refresh do token com sucesso", async () => {
       mockedAuth.verifyRefreshToken.mockReturnValue({
         userId: testUser.id,
@@ -368,7 +368,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         access_rights: "read,write",
       });
 
-      const response = await request(app).post("/api/auth/refresh").send({
+      const response = await request(app).post("/v1/auth/refresh").send({
         refreshToken: "existing-refresh-token",
       });
 
@@ -386,7 +386,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se não existir refreshToken", async () => {
-      const response = await request(app).post("/api/auth/refresh").send({});
+      const response = await request(app).post("/v1/auth/refresh").send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain("Refresh token é obrigatório");
@@ -397,7 +397,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     it("deve retornar erro 401 se refreshToken for invalido", async () => {
       mockedAuth.verifyRefreshToken.mockReturnValue(null);
 
-      const response = await request(app).post("/api/auth/refresh").send({
+      const response = await request(app).post("/v1/auth/refresh").send({
         refreshToken: "existing-refresh-token",
       });
 
@@ -428,7 +428,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         access_rights: "read,write",
       });
 
-      const response = await request(app).post("/api/auth/refresh").send({
+      const response = await request(app).post("/v1/auth/refresh").send({
         refreshToken: "any_invalid_refreshToken",
       });
 
@@ -447,7 +447,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         throw new Error();
       });
 
-      const response = await request(app).post("/api/auth/refresh").send({
+      const response = await request(app).post("/v1/auth/refresh").send({
         refreshToken: "any_invalid_refreshToken",
       });
 
@@ -461,9 +461,9 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("POST /api/auth/logout", () => {
+  describe("POST /v1/auth/logout", () => {
     it("deve realizar o logout com sucesso", async () => {
-      const response = await request(app).post("/api/auth/logout").send({});
+      const response = await request(app).post("/v1/auth/logout").send({});
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain("Logout realizado com sucesso");
@@ -480,7 +480,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         throw new Error();
       });
 
-      const response = await request(app).post("/api/auth/logout").send({});
+      const response = await request(app).post("/v1/auth/logout").send({});
 
       expect(response.status).toBe(500);
       expect(response.body.error).toContain("Erro interno do servidor");
@@ -493,7 +493,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("GET /api/auth/me", () => {
+  describe("GET /v1/auth/me", () => {
     it("deve retornar os dados do usuário logado", async () => {
       const hashedPassword = "$2a$10$abcdefghijklmnopqrstuvwxyz";
       mockedUserRepository.findById.mockResolvedValue({
@@ -507,7 +507,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         access_rights: "read,write",
       });
 
-      const response = await request(app).get("/api/auth/me");
+      const response = await request(app).get("/v1/auth/me");
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(
@@ -524,7 +524,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 401 sem token", async () => {
       initAppWithoutUserId();
-      const response = await request(app).get("/api/auth/me");
+      const response = await request(app).get("/v1/auth/me");
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Usuário não autenticado");
@@ -534,7 +534,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 401 com token inválido", async () => {
       const response = await request(app)
-        .get("/api/auth/me")
+        .get("/v1/auth/me")
         .set("Authorization", "Bearer invalid.token.here");
 
       expect(response.status).toBe(401);
@@ -545,7 +545,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     it("deve retornar erro 404 se usuário não existir", async () => {
       mockedUserRepository.findById.mockResolvedValue(undefined);
 
-      const response = await request(app).get("/api/auth/me");
+      const response = await request(app).get("/v1/auth/me");
 
       expect(response.status).toBe(404);
       expect(response.body.error).toContain("Usuário não encontrado");
@@ -557,7 +557,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     it("deve retornar erro 500 em caso de erro interno", async () => {
       mockedUserRepository.findById.mockRejectedValue(new Error());
 
-      const response = await request(app).get("/api/auth/me");
+      const response = await request(app).get("/v1/auth/me");
 
       expect(response.status).toBe(500);
       expect(response.body.error).toContain("Erro interno do servidor");
@@ -567,7 +567,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("DELETE /api/auth/delete-account", () => {
+  describe("DELETE /v1/auth/delete-account", () => {
     it("deve deletar os dados do usuário logado", async () => {
       const testFile = {
         id: "file-123",
@@ -587,7 +587,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         testFile,
       ]);
 
-      const response = await request(app).delete("/api/auth/delete-account");
+      const response = await request(app).delete("/v1/auth/delete-account");
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(
@@ -610,7 +610,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 401 sem token", async () => {
       initAppWithoutUserId();
-      const response = await request(app).delete("/api/auth/delete-account");
+      const response = await request(app).delete("/v1/auth/delete-account");
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain("Usuário não autenticado");
@@ -623,7 +623,7 @@ describe("Auth Controller - HTTP Endpoints", () => {
         new Error(),
       );
 
-      const response = await request(app).delete("/api/auth/delete-account");
+      const response = await request(app).delete("/v1/auth/delete-account");
 
       expect(response.status).toBe(500);
       expect(response.body.error).toContain("Erro interno do servidor");

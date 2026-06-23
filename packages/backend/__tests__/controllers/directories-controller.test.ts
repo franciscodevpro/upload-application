@@ -1,8 +1,8 @@
 /**
  * Testes de integração para endpoints de diretórios
- * - POST /api/directories
- * - GET /api/directories/:id
- * - DELETE /api/directories/:id
+ * - POST /v1/directories
+ * - GET /v1/directories/:id
+ * - DELETE /v1/directories/:id
  */
 
 import request from "supertest";
@@ -67,11 +67,11 @@ describe("Directories Controller - HTTP Endpoints", () => {
     jest.clearAllMocks();
   });
 
-  describe("POST /api/directories", () => {
+  describe("POST /v1/directories", () => {
     it("deve criar um novo diretório com nome válido", async () => {
       mockedDirectoryRepository.create.mockResolvedValue(undefined);
 
-      const response = await request(app).post("/api/directories").send({
+      const response = await request(app).post("/v1/directories").send({
         name: testDirectory.name,
         parent: null,
         path: testDirectory.path,
@@ -99,7 +99,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       initAppGeneric(undefined, "read,write");
       mockedDirectoryRepository.create.mockResolvedValue(undefined);
 
-      const response = await request(app).post("/api/directories").send({
+      const response = await request(app).post("/v1/directories").send({
         name: testDirectory.name,
         parent: "parent-dir-123",
       });
@@ -124,7 +124,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
       initAppGeneric(undefined, "read");
-      const response = await request(app).post("/api/directories").send({
+      const response = await request(app).post("/v1/directories").send({
         path: testDirectory.path,
       });
 
@@ -136,7 +136,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
 
     it("deve retornar erro 400 se o nome não for fornecido", async () => {
-      const response = await request(app).post("/api/directories").send({
+      const response = await request(app).post("/v1/directories").send({
         path: testDirectory.path,
       });
 
@@ -152,7 +152,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).post("/api/directories").send({
+      const response = await request(app).post("/v1/directories").send({
         name: testDirectory.name,
         parent: null,
         path: testDirectory.path,
@@ -168,7 +168,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     it("deve criar diretório com parent válido", async () => {
       mockedDirectoryRepository.create.mockResolvedValue(undefined);
 
-      const response = await request(app).post("/api/directories").send({
+      const response = await request(app).post("/v1/directories").send({
         name: "Subdirectory",
         parent: "parent-dir-123",
         path: "/parent/subdirectory",
@@ -182,12 +182,12 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("GET /api/directories/:parentId/subdirectories", () => {
+  describe("GET /v1/directories/:parentId/subdirectories", () => {
     it("deve retornar a lista de subdiretórios", async () => {
       mockedDirectoryRepository.findByParent.mockResolvedValue([testDirectory]);
 
       const response = await request(app).get(
-        "/api/directories/parent-dir-123/subdirectories",
+        "/v1/directories/parent-dir-123/subdirectories",
       );
 
       expect(response.status).toBe(200);
@@ -202,7 +202,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.findByParent.mockResolvedValue([testDirectory]);
 
       const response = await request(app).get(
-        "/api/directories/parent-dir-123/subdirectories",
+        "/v1/directories/parent-dir-123/subdirectories",
       );
 
       expect(response.status).toBe(200);
@@ -220,7 +220,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.findByParent.mockResolvedValue([]);
 
       const response = await request(app).get(
-        "/api/directories/parent-dir-123/subdirectories",
+        "/v1/directories/parent-dir-123/subdirectories",
       );
 
       expect(response.status).toBe(200);
@@ -236,7 +236,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       );
 
       const response = await request(app).get(
-        "/api/directories/parent-dir-123/subdirectories",
+        "/v1/directories/parent-dir-123/subdirectories",
       );
 
       expect(response.status).toBe(500);
@@ -247,12 +247,12 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("GET /api/directories", () => {
+  describe("GET /v1/directories", () => {
     it("deve retornar a lista de diretórios", async () => {
       mockedDirectoryRepository.list.mockResolvedValue([testDirectory]);
 
       const response = await request(app).get(
-        "/api/directories?parent=parent-dir-123",
+        "/v1/directories?parent=parent-dir-123",
       );
 
       expect(response.status).toBe(200);
@@ -273,7 +273,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.list.mockResolvedValue([testDirectory]);
 
       const response = await request(app).get(
-        "/api/directories?parent=parent-dir-123",
+        "/v1/directories?parent=parent-dir-123",
       );
 
       expect(response.status).toBe(200);
@@ -292,7 +292,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     it("deve retornar um array vazio se não houver diretórios", async () => {
       mockedDirectoryRepository.list.mockResolvedValue([]);
 
-      const response = await request(app).get("/api/directories");
+      const response = await request(app).get("/v1/directories");
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -306,7 +306,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).get("/api/directories");
+      const response = await request(app).get("/v1/directories");
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty("error");
@@ -316,7 +316,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("GET /api/directories/:id", () => {
+  describe("GET /v1/directories/:id", () => {
     it("deve retornar um diretório pelo ID", async () => {
       mockedDirectoryRepository.findById.mockResolvedValueOnce({
         ...testDirectory,
@@ -324,7 +324,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       });
 
       const response = await request(app).get(
-        `/api/directories/${testDirectory.id}`,
+        `/v1/directories/${testDirectory.id}`,
       );
 
       expect(response.status).toBe(200);
@@ -346,7 +346,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.findById.mockResolvedValueOnce(testDirectory);
 
       const response = await request(app).get(
-        `/api/directories/${testDirectory.id}`,
+        `/v1/directories/${testDirectory.id}`,
       );
 
       expect(response.status).toBe(200);
@@ -362,7 +362,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     it("deve retornar erro 404 se diretório não existir", async () => {
       mockedDirectoryRepository.findById.mockResolvedValue(undefined);
 
-      const response = await request(app).get("/api/directories/invalid-id");
+      const response = await request(app).get("/v1/directories/invalid-id");
 
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
@@ -377,7 +377,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       );
 
       const response = await request(app).get(
-        `/api/directories/${testDirectory.id}`,
+        `/v1/directories/${testDirectory.id}`,
       );
 
       expect(mockedDirectoryRepository.findById).toHaveBeenCalledWith(
@@ -424,7 +424,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
         .mockResolvedValueOnce(firstChildDirectory)
         .mockResolvedValueOnce(parentDirectory);
 
-      const response = await request(app).get("/api/directories/child-123");
+      const response = await request(app).get("/v1/directories/child-123");
 
       expect(response.status).toBe(200);
       expect(response.body.address).toHaveLength(3);
@@ -469,7 +469,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
         .mockResolvedValueOnce(firstChildDirectory)
         .mockResolvedValueOnce(parentDirectory);
 
-      const response = await request(app).get("/api/directories/child-123");
+      const response = await request(app).get("/v1/directories/child-123");
 
       expect(response.status).toBe(200);
       expect(response.body.address).toHaveLength(3);
@@ -527,7 +527,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
         .mockResolvedValueOnce(secondChildDirectory)
         .mockResolvedValueOnce(firstChildDirectory);
 
-      const response = await request(app).get("/api/directories/child-123");
+      const response = await request(app).get("/v1/directories/child-123");
 
       expect(response.status).toBe(200);
       expect(response.body.address).toHaveLength(1);
@@ -552,7 +552,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("PUT /api/directories", () => {
+  describe("PUT /v1/directories", () => {
     it("deve atualizar um diretório com nome válido", async () => {
       mockedDirectoryRepository.findById
         .mockResolvedValueOnce(testDirectory)
@@ -562,7 +562,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
           parent: null,
         });
 
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
         size: 0,
         path: testDirectory.path,
@@ -595,7 +595,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
           parent: null,
         });
 
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
         size: 0,
         path: testDirectory.path,
@@ -625,7 +625,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
 
       mockedDirectoryRepository.findById.mockResolvedValue(testDirectory);
 
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
       });
 
@@ -648,7 +648,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     it("deve retornar erro 403 caso o usuário não tenha permissão de escrita", async () => {
       initAppGeneric(undefined, "read");
       mockedDirectoryRepository.findById.mockResolvedValue(undefined);
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
         size: 0,
         path: testDirectory.path,
@@ -663,7 +663,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 403 caso o usuário não tenha permissão para escrever conteudo publico", async () => {
       mockedDirectoryRepository.findById.mockResolvedValue(undefined);
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
         size: 0,
         path: testDirectory.path,
@@ -679,7 +679,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
 
     it("deve retornar erro 404 caso o diretório não exista", async () => {
       mockedDirectoryRepository.findById.mockResolvedValue(undefined);
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
         size: 0,
         path: testDirectory.path,
@@ -698,7 +698,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
         new Error("Internal server error"),
       );
 
-      const response = await request(app).put("/api/directories/test-id").send({
+      const response = await request(app).put("/v1/directories/test-id").send({
         name: "Updated Directory Name",
         parent: null,
         path: testDirectory.path,
@@ -712,7 +712,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     });
   });
 
-  describe("DELETE /api/directories/:id", () => {
+  describe("DELETE /v1/directories/:id", () => {
     it("deve deletar um diretório com sucesso", async () => {
       const firstChildDirectory = {
         ...testDirectory,
@@ -755,7 +755,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.delete.mockResolvedValue(undefined);
 
       const response = await request(app).delete(
-        `/api/directories/${testDirectory.id}`,
+        `/v1/directories/${testDirectory.id}`,
       );
 
       expect(response.status).toBe(200);
@@ -772,7 +772,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
     it("deve retornar erro 404 se diretório não existir", async () => {
       mockedDirectoryRepository.findById.mockResolvedValue(undefined);
 
-      const response = await request(app).delete("/api/directories/invalid-id");
+      const response = await request(app).delete("/v1/directories/invalid-id");
 
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty("error");
@@ -801,7 +801,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.delete.mockResolvedValue(undefined);
 
       const response = await request(app).delete(
-        `/api/directories/${testDirectory.id}`,
+        `/v1/directories/${testDirectory.id}`,
       );
 
       expect(response.status).toBe(200);
@@ -831,7 +831,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       mockedDirectoryRepository.delete.mockResolvedValue(undefined);
 
       const response = await request(app).delete(
-        `/api/directories/${testDirectory.id}`,
+        `/v1/directories/${testDirectory.id}`,
       );
 
       expect(response.status).toBe(200);
@@ -848,7 +848,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       initAppGeneric(undefined, "read");
 
       const response = await request(app).delete(
-        "/api/directories/parent-dir-123",
+        "/v1/directories/parent-dir-123",
       );
 
       expect(response.status).toBe(403);
@@ -864,7 +864,7 @@ describe("Directories Controller - HTTP Endpoints", () => {
       );
 
       const response = await request(app).delete(
-        "/api/directories/parent-dir-123",
+        "/v1/directories/parent-dir-123",
       );
 
       expect(response.status).toBe(500);
