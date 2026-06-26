@@ -1,4 +1,5 @@
 // server.ts
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { setupSwagger } from "./swagger";
@@ -8,10 +9,7 @@ import { filesController } from "./controllers/files-controller";
 import { uploadFilesController } from "./controllers/upload-files-controller";
 import { downloadFilesController } from "./controllers/download-files-controller";
 import { initializeDatabase } from "./repository/sqlite";
-import dotenv from "dotenv";
 import { logger } from "./utils/logger-utils";
-
-dotenv.config();
 
 const app = express();
 app.use(cors());
