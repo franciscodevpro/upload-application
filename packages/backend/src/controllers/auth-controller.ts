@@ -28,6 +28,7 @@ export const authController = (expressServer: Express) => {
       const recaptchaValid = await verifyRecaptcha(
         req.body.recaptchaToken,
         req.ip,
+        logger,
       );
 
       if (!recaptchaValid) {
@@ -62,6 +63,7 @@ export const authController = (expressServer: Express) => {
       const recaptchaValid = await verifyRecaptcha(
         req.body.recaptchaToken,
         req.ip,
+        logger,
       );
 
       if (!recaptchaValid) {

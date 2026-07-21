@@ -45,6 +45,7 @@ export class UploadFilesService {
 
     this.tusServer = new Server({
       //maxSize: 1 * 1024 * 1024 /*Megabytes*/,
+      respectForwardedHeaders: true,
       maxSize: async (req, res) => {
         const maxUploadLimit = process.env?.UPLOAD_DEFAULT_LIMIT
           ? Number(process.env.UPLOAD_DEFAULT_LIMIT)
