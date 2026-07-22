@@ -42,7 +42,7 @@ export default function SignUpForm({ onSignUpSuccess, onSwitchToLogin }: SignUpF
     return new Promise((resolve) => {
       if ((window as any).grecaptcha) {
         (window as any).grecaptcha.ready(function() {
-          (window as any).grecaptcha.execute(import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY, {action: 'submit'}).then(function(token: string) {
+          (window as any).grecaptcha.execute(import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY, {action: 'signup'}).then(function(token: string) {
               return resolve(token);
           });
         });

@@ -17,7 +17,7 @@ export default function LoginForm({ onLoginSuccess, onSwitchToSignup }: LoginFor
     return new Promise((resolve) => {
       if ((window as any).grecaptcha) {
         (window as any).grecaptcha.ready(function() {
-          (window as any).grecaptcha.execute(import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY, {action: 'submit'}).then(function(token: string) {
+          (window as any).grecaptcha.execute(import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY, {action: 'login'}).then(function(token: string) {
               return resolve(token);
           });
         });
