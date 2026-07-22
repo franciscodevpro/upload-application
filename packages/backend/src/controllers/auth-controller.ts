@@ -11,7 +11,7 @@ import { NotFoundError } from "../errors/not-found-error";
 import { BadRequestError } from "../errors/bad-request-error";
 import { ConflictError } from "../errors/conflict-error";
 import { logger as Logger } from "../utils/logger-utils";
-import { verifyRecaptcha } from "../utils/verify-recaptcha-utils";
+import { createAssessment } from "../utils/verify-recaptcha-utils";
 
 export const authController = (expressServer: Express) => {
   const authService = new AuthService(
@@ -25,10 +25,12 @@ export const authController = (expressServer: Express) => {
   // 1. Register
   expressServer.post("/v1/auth/register", async (req, res) => {
     try {
-      const recaptchaValid = await verifyRecaptcha(
-        req.body.recaptchaToken,
-        req.ip,
-      );
+      const recaptchaValid = await createAssessment({
+        token: req.body.recaptchaToken,
+        recaptchaAction: "register",
+        remoteip: req.ip,
+        logger,
+      });
 
       if (!recaptchaValid) {
         return res.status(400).json({ error: "reCAPTCHA verification failed" });
@@ -59,10 +61,12 @@ export const authController = (expressServer: Express) => {
   // 2. Login
   expressServer.post("/v1/auth/login", async (req, res) => {
     try {
-      const recaptchaValid = await verifyRecaptcha(
-        req.body.recaptchaToken,
-        req.ip,
-      );
+      const recaptchaValid = await createAssessment({
+        token: req.body.recaptchaToken,
+        recaptchaAction: "login",
+        remoteip: req.ip,
+        logger,
+      });
 
       if (!recaptchaValid) {
         return res.status(400).json({ error: "reCAPTCHA verification failed" });

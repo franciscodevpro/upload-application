@@ -16,6 +16,15 @@ app.use(cors());
 app.use(express.json());
 setupSwagger(app);
 
+app.use((req, _, next) => {
+  logger.info(req.originalUrl);
+  logger.info(req.protocol);
+  logger.info(req.get("host") as any);
+  logger.info(req.url);
+  logger.info(req.headers as any);
+  return next();
+});
+
 const host = "127.0.0.1"; // Acessível na rede
 const port = 1080;
 
