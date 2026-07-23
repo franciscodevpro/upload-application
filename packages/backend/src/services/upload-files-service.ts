@@ -43,7 +43,7 @@ export class UploadFilesService {
       }
     };
 
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:1080";
+    const backendUrl = process.env.API_BASE_PATH || "http://localhost:1080";
 
     this.tusServer = new Server({
       //maxSize: 1 * 1024 * 1024 /*Megabytes*/,
