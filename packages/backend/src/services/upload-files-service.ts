@@ -43,6 +43,8 @@ export class UploadFilesService {
       }
     };
 
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:1080";
+
     this.tusServer = new Server({
       //maxSize: 1 * 1024 * 1024 /*Megabytes*/,
       respectForwardedHeaders: true,
@@ -62,6 +64,9 @@ export class UploadFilesService {
           : maxUploadLimit;
       },
       path: "/v1/upload",
+      generateUrl: (_req, { id }) => {
+        return `${backendUrl}/v1/upload/${id}`;
+      },
       namingFunction: (req, metadata) => {
         return randomUUID() + path.extname((metadata as any).filename);
       },
