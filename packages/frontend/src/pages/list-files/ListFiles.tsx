@@ -23,7 +23,7 @@ import ItemDetailsCard from '../../components/ItemDetailsCard';
 import AuthPage from '../auth/AuthPage';
 import UserMenu from '../../components/UserMenu';
 import { useAuthContext } from '../../contexts/AuthContext';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 interface FileItem {
   id: string;
@@ -244,12 +244,14 @@ export default function ListFiles() {
   const formatSize = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   const closeDetails = () => setDetailsItem(null);
 
+  const goToPath = useNavigate();
+
   return (
     <section className="max-w-svw bg-background-primary text-text-primary p-6 font-sans">
       <div className="max-w-7xl mx-auto mb-20">
         <div className="mb-6">
           <nav className="flex flex-col md:flex-row-reverse items-center justify-between text-sm">
-            <UserMenu goToAuth={() => { setIsAuthOpen(true); }} onLogoutSuccess={() => { window.location.href = '/'; }} />
+            <UserMenu goToAuth={() => { setIsAuthOpen(true); }} onLogoutSuccess={() => { goToPath(0); }} />
             <div className="flex flex-1 w-full overflow-x-hidden items-center gap-2">
               <Link to="/" className="text-primary-400 hover:text-primary-300 transition-colors font-medium">
                 Home
@@ -460,7 +462,7 @@ export default function ListFiles() {
       }
 
       {isAuthOpen && (
-        <AuthPage open={true} onClose={() => setIsAuthOpen(false)} onLoginSuccess={(tokens) => {setAuthorizationToken(tokens.accessToken); window.location.href = '/';}} />
+        <AuthPage open={true} onClose={() => setIsAuthOpen(false)} onLoginSuccess={(tokens) => {setAuthorizationToken(tokens.accessToken); setIsAuthOpen(false); goToPath(0);}} />
       )}
 
       {detailsItem && !isAuthOpen && (
