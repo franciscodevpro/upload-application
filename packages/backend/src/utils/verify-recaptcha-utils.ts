@@ -41,8 +41,6 @@ export const createAssessment = async ({
 
   const response = await req.json();
 
-  logger?.info(response);
-
   // Check if the token is valid.
   if (!response?.tokenProperties?.valid) {
     logger?.error(
