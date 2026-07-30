@@ -102,6 +102,41 @@ const getDirectoryType = (): string => {
   return 'Pasta';
 };
 
+const downloadProtectedFile = async (fileUrl: string, jwtToken: string | null, filename = 'downloaded_file') => {
+  try {
+    const headers: Record<string, string> = {
+      'Accept': '*/*'
+    };
+    if (jwtToken) {
+      headers['Authorization'] = `Bearer ${jwtToken}`;
+    }
+    const response = await fetch(fileUrl, {
+      method: 'GET',
+      headers
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    
+    const downloadLink = document.createElement('a');
+    downloadLink.href = blobUrl;
+    downloadLink.download = filename;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    
+    document.body.removeChild(downloadLink);
+    window.URL.revokeObjectURL(blobUrl);
+    
+  } catch (error) {
+    console.error('File download failed:', error);
+  }
+}
+
+
 export default function ListFiles() {
   const directoryId = new URLSearchParams(window.location.search).get('directoryId') || undefined;
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -185,7 +220,7 @@ export default function ListFiles() {
     });
 
     if (res.ok) {
-      window.location.reload();
+      goToPath(0);
     } else {
       const errorData = await res.json().catch(() => null);
       window.alert(errorData?.error || `Erro ao deletar ${type === 'file' ? 'arquivo' : 'diretório'}.`);
@@ -204,7 +239,7 @@ export default function ListFiles() {
     });
 
     if (res.ok) {
-      window.location.reload();
+      goToPath(0);
     } else {
       const errorData = await res.json().catch(() => null);
       window.alert(errorData?.error || `Erro ao tentar tornar o ${type === 'file' ? 'arquivo' : 'diretório'} ${privacy === 'private' ? 'privado' : 'público'}.`);
@@ -245,6 +280,11 @@ export default function ListFiles() {
   const closeDetails = () => setDetailsItem(null);
 
   const goToPath = useNavigate();
+
+  const downloadSelectedFiles = () => {
+    
+    downloadProtectedFile(`${API_URL}/download?${new URLSearchParams(selected.map(s => ['files', s])).toString()}`, authorizationToken, selected.length === 1 ? selected[0] : 'download.zip');
+  }
 
   return (
     <section className="max-w-svw bg-background-primary text-text-primary p-6 font-sans">
@@ -293,7 +333,7 @@ export default function ListFiles() {
               </button>
             }
             <button 
-              onClick={() => window.location.href = `${API_URL}/download?${new URLSearchParams(selected.map(s => ['files', s])).toString()}`}
+              onClick={downloadSelectedFiles}
               disabled={selected.length === 0}
               className={`flex items-center px-6 py-3 rounded-2xl font-medium transition-all duration-200 font-sans ${
                 selected.length > 0 
@@ -435,13 +475,13 @@ export default function ListFiles() {
                     >
                       {file.privacy == 'private'? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>}
-                    <a 
-                      href={`${API_URL}/download?files=${encodeURIComponent(file.newName)}`}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-primary-400 transition hover:bg-background-secondary hover:text-primary-300"
+                    <button 
+                      onClick={() => downloadProtectedFile(`${API_URL}/download?files=${encodeURIComponent(file.newName)}`, authorizationToken, file.newName)}
+                      className="iinline-flex items-center justify-center bg-transparent rounded-none border-0 p-0 m-0 h-10 w-10 text-primary-400 transition hover:bg-background-secondary hover:text-primary-300"
                       title="Baixar individualmente"
                     >
                       <Download size={18} />
-                    </a>
+                    </button>
                   </div>
                 </div>
               </article>
